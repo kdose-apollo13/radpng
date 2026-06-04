@@ -1,6 +1,7 @@
 """
     parse_ihdr
-    struct.unpacks the header bytes into a dict
+    make_ihdr
+    struct (un)pack the header bytes into/from a dict
 """
 import struct
 
@@ -60,6 +61,29 @@ def parse_ihdr(data):
     }
 
 
+def make_ihdr(ihdr):
+    """
+        ihdr
+            : dict
+            : keys 'width', 'height', 'bit_depth', 'color_type' required;
+              the three _method default to 0 if absent
+
+        returns
+            > bytes
+            > exactly 13 bytes (the IHDR *data* field, not wrapped in chunk)
+    """
+    return struct.pack(
+        '>IIBBBBB',
+        ihdr['width'],
+        ihdr['height'],
+        ihdr['bit_depth'],
+        ihdr['color_type'],
+        ihdr.get('compression_method', 0),
+        ihdr.get('filter_method', 0),
+        ihdr.get('interlace_method', 0),
+    )
+
+
 if __name__ == '__main__':
     print('=== ihdr demo ===')
 
@@ -75,4 +99,13 @@ if __name__ == '__main__':
 
     rgb = '00 00 00 01  00 00 00 01  08  02  00  00  00'
     assert parse_ihdr(bytes.fromhex(rgb))['color_type'] == 2
+
+    # make + parse roundtrip (synthetic valid dict)
+    d = {
+        'width': 1, 'height': 1,
+        'bit_depth': 8, 'color_type': 2,
+        'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
+    }
+    assert parse_ihdr(make_ihdr(d)) == d
+    print('make/parse round ok')
 

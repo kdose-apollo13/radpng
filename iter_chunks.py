@@ -55,5 +55,21 @@ def iter_chunks(f):
 
 if __name__ == '__main__':
     print('=== iter_chunks demo ===')
-    # TODO: compose this
+
+    # use known-good minimal png (ct2 1x1) -- after sig, expect IHDR + IDAT + IEND
+    from signature import PNG_SIGNATURE
+    png = PNG_SIGNATURE + bytes.fromhex(
+        '0000000d4948445200000001000000010802000000907753de'
+        '0000000c49444154789c63606060000000040001f6173855'
+        '0000000049454e44ae426082'
+    )
+    with io.BytesIO(png) as f:
+        check_signature(f)
+        chunks = list(iter_chunks(f))
+        types = [t for t, d in chunks]
+        print('chunks:', types)
+        assert types == [b'IHDR', b'IDAT', b'IEND']
+        assert len(chunks[0][1]) == 13
+        assert chunks[-1][0] == b'IEND'
+        print('iter_chunks on minimal png ok')
 

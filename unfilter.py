@@ -5,6 +5,7 @@
 from row_bytes import get_row_bytes
 from bpp import get_bpp
 from paeth import paeth_predictor
+from filter import filter
 
 
 def unfilter(filtered, width, height, color_type, bit_depth):
@@ -78,33 +79,9 @@ if __name__ == '__main__':
     print('orig:', list(orig))
 
     for ftype in range(5):
-        # forward filter (same math as encoder would do) -- custom for this test
-        filtered = bytearray()
-        for y in range(H):
-            filtered.append(ftype)
-            for x in range(W):
-                val = orig[y * W + x]
-                if ftype == 0:
-                    f = val
-                elif ftype == 1:
-                    a = orig[y * W + (x - 1)] if x >= 1 else 0
-                    f = (val - a) & 0xff
-                elif ftype == 2:
-                    b = orig[(y - 1) * W + x] if y >= 1 else 0
-                    f = (val - b) & 0xff
-                elif ftype == 3:
-                    a = orig[y * W + (x - 1)] if x >= 1 else 0
-                    b = orig[(y - 1) * W + x] if y >= 1 else 0
-                    f = (val - (a + b) // 2) & 0xff
-                elif ftype == 4:
-                    a = orig[y * W + (x - 1)] if x >= 1 else 0
-                    b = orig[(y - 1) * W + x] if y >= 1 else 0
-                    c = orig[(y - 1) * W + (x - 1)] if x >= 1 and y >= 1 else 0
-                    f = (val - paeth_predictor(a, b, c)) & 0xff
-                filtered.append(f)
-
-        recon = unfilter(bytes(filtered), W, H, 0, 8)
+        filt = filter(orig, W, H, 0, 8, filter_type=ftype)
+        recon = unfilter(filt, W, H, 0, 8)
         assert list(recon) == list(orig), f'roundtrip failed for filter type {ftype}'
         print(f'  filter {ftype} roundtrip ok')
 
-    # all 5 proven (paeth edges included) with custom data written in this demo
+    # all 5 proven (paeth edges included) via filter + unfilter symmetry on custom data
