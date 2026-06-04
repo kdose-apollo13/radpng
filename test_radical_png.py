@@ -4,12 +4,14 @@ RADICAL PNG TESTS (pure stdlib unittest wrappers)
 Goal: tests only (no lib changes). Individual test outputs are informative/readable
 via GWT (Given/When/Then) parsing from docstrings + subclassed TextTestRunner/Result.
 
-- parse_gwt(doc) + beautify_unittest_output(raw) : helpers to turn typical output/docs
-  into sensible 3-line (or equiv) scenario descriptions.
-- RadicalTestResult / RadicalTextTestRunner : beauty + radical nature for output.
-- RadicalTestCase : light domain helpers (roundtrips etc).
+Helpers (GWT, beauty runner, aliases, packers, domain roundtrips) are now extracted
+to reusable test_helpers.py (importable for other radical tests/suites; see that file
+for docs on parse_gwt / beautify / Radical* / short aliases on RadicalTestCase).
+test_radical_png.py now focuses on the GWT test cases + self-test of helpers (TestHelpers).
+
 - All cases exercise atoms + full paths + errors + matrix (incl low bd + 16b + split IDAT).
 - One purpose of tests: surface refinements (see SUGGESTIONS.md companion file).
+- Short aliases (self.equa etc) used throughout to reduce visual noise in asserts.
 
 Run all (the convenient way):
     python test_radical_png.py
@@ -27,7 +29,6 @@ import unittest
 import io
 import sys
 import os
-import re
 import zlib
 import struct
 
@@ -46,246 +47,22 @@ from unfilter import unfilter
 from encoder import encode_png, encode_rgba
 from decoder import decode_png, decode_rgba
 
-
-# --- GWT + beautify helpers (parse typical test output / docs into sensible lines) ---
-
-def parse_gwt(doc):
-    """Parse docstring into (given, when, then) sensible lines (3-part scenarios).
-
-    Tolerates:
-      Given foo
-      When: bar
-      Then baz
-    Multi-line continuations until next keyword. Case-insensitive match on keywords.
-    Returns clean stripped strings ('' if absent).
-    """
-    if not doc:
-        return '', '', ''
-    text = doc.strip()
-    if not text:
-        return '', '', '',
-
-    # Normalize line starts for keywords
-    lines = text.splitlines()
-    given_parts = []
-    when_parts = []
-    then_parts = []
-    current = None
-
-    for raw in lines:
-        ln = raw.strip()
-        low = ln.lower()
-        if low.startswith('given'):
-            current = 'given'
-            rest = ln[5:].lstrip(':').strip()
-            if rest:
-                given_parts.append(rest)
-            continue
-        elif low.startswith('when'):
-            current = 'when'
-            rest = ln[4:].lstrip(':').strip()
-            if rest:
-                when_parts.append(rest)
-            continue
-        elif low.startswith('then'):
-            current = 'then'
-            rest = ln[4:].lstrip(':').strip()
-            if rest:
-                then_parts.append(rest)
-            continue
-        elif current == 'given' and ln:
-            given_parts.append(ln)
-        elif current == 'when' and ln:
-            when_parts.append(ln)
-        elif current == 'then' and ln:
-            then_parts.append(ln)
-
-    return (
-        ' '.join(given_parts).strip(),
-        ' '.join(when_parts).strip(),
-        ' '.join(then_parts).strip(),
-    )
+# Reusable helpers (GWT, beauty, aliases, test-only packers, domain asserts).
+# Extracted here so they can be reused by other tests; RadicalTestCase now has
+# short aliases (equa/rais etc) to reduce visual noise.
+from test_helpers import (
+    parse_gwt,
+    beautify_unittest_output,
+    RadicalTestResult,
+    RadicalTextTestRunner,
+    RadicalTestCase,
+    _pack_1bit,
+    _pack_2bit,
+    _pack_4bit,
+)
 
 
-def beautify_unittest_output(raw):
-    """Parse typical default unittest output into sensible grouped lines.
-
-    Turns lines like:
-      test_foo (mod.Class) ... ok
-      test_bar (mod.Class) ... FAIL
-    into blocks with status and (if we can) scenario feel. Used to demonstrate
-    "helpers to parse the typical test output".
-    """
-    if not raw:
-        return ''
-    out_lines = []
-    # tolerant match for "test_xxx ... ok" (docstring may be on same line in -v)
-    pat = re.compile(r'^(test_\w+).*?\.{2,}\s*(ok|FAIL|ERROR|skipped)(.*)$', re.I)
-    for line in raw.splitlines():
-        m = pat.match(line.strip())
-        if m:
-            name, status, extra = m.groups()
-            out_lines.append(f'SCENARIO: {name}')
-            out_lines.append(f'  Status: {status.upper()}')
-            if extra and extra.strip():
-                out_lines.append(f'  Detail: {extra.strip()}')
-            out_lines.append('')
-        else:
-            if line.strip():
-                out_lines.append(line.rstrip())
-    return '\n'.join(out_lines).rstrip() + '\n'
-
-
-# --- Radical wrappers for beauty + readable per-test output ---
-
-class RadicalTestResult(unittest.TextTestResult):
-    """Custom result that emits informative GWT 3-line blocks per test.
-    We bypass TextTestResult's default name+ok printing for clean radical output.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # suppress the default "desc ... ok" noise; we control all output
-        self.separator1 = ' '
-        self.separator2 = ''
-
-    def getDescription(self, test):
-        return test._testMethodName  # short; we emit full GWT ourselves
-
-    def _emit_gwt(self, test):
-        doc = getattr(test, '_testMethodDoc', None)
-        g, w, t = parse_gwt(doc)
-        self.stream.writeln(f'  [TEST] {test._testMethodName}')
-        if g:
-            self.stream.writeln(f'    Given: {g}')
-        if w:
-            self.stream.writeln(f'    When:  {w}')
-        if t:
-            self.stream.writeln(f'    Then:  {t}')
-
-    def startTest(self, test):
-        # call only TestResult (no printing) so we fully control
-        unittest.TestResult.startTest(self, test)
-        if self.showAll:
-            self._emit_gwt(test)
-
-    def addSuccess(self, test):
-        unittest.TestResult.addSuccess(self, test)  # record only
-        if self.showAll:
-            self.stream.writeln('    [PASS]\n')
-
-    def addFailure(self, test, err):
-        unittest.TestResult.addFailure(self, test, err)
-        if self.showAll:
-            self.stream.writeln('    [FAIL]')
-            self.stream.writeln(f'    {err[1]}\n')
-
-    def addError(self, test, err):
-        unittest.TestResult.addError(self, test, err)
-        if self.showAll:
-            self.stream.writeln('    [ERROR]')
-            self.stream.writeln(f'    {err[1]}\n')
-
-    def addSkip(self, test, reason):
-        unittest.TestResult.addSkip(self, test, reason)
-        if self.showAll:
-            self.stream.writeln(f'    [SKIP] {reason}\n')
-
-
-class RadicalTextTestRunner(unittest.TextTestRunner):
-    """Runner that uses RadicalTestResult and adds radical banners/summary."""
-
-    def __init__(self, **kwargs):
-        kwargs.setdefault('verbosity', 2)
-        super().__init__(**kwargs)
-
-    def _makeResult(self):
-        return RadicalTestResult(self.stream, self.descriptions, self.verbosity)
-
-    def run(self, test):
-        self.stream.writeln('')
-        self.stream.writeln('=' * 58)
-        self.stream.writeln('  RADICAL PNG TESTS  (stdlib + GWT wrappers + beauty)')
-        self.stream.writeln('  pure python | no deps | informative per-test output')
-        self.stream.writeln('=' * 58)
-        result = super().run(test)
-        self.stream.writeln('-' * 58)
-        n = result.testsRun
-        fails = len(result.failures) + len(result.errors)
-        if fails == 0:
-            self.stream.writeln(f'  Ran {n} tests. ALL PASS. Radical!')
-        else:
-            self.stream.writeln(f'  Ran {n} tests. {fails} failures/errors.')
-        self.stream.writeln('  (See SUGGESTIONS.md for refinements surfaced by tests)')
-        self.stream.writeln('=' * 58)
-        self.stream.writeln('')
-        return result
-
-
-class RadicalTestCase(unittest.TestCase):
-    """Light unittest.TestCase wrapper supplying radical/PNG conveniences."""
-
-    def assert_png_roundtrip(self, ihdr, data, palette=None, filter_type=0):
-        """Encode then decode; assert data and core ihdr fields match."""
-        png = encode_png(ihdr, data, palette=palette, filter_type=filter_type)
-        dec = decode_png(png)
-        self.assertEqual(dec['data'], bytes(data))
-        for k in ('width', 'height', 'bit_depth', 'color_type'):
-            self.assertEqual(dec[k], ihdr[k])
-        if palette is not None:
-            self.assertEqual(dec.get('palette'), palette)
-
-    def assert_rgba_roundtrip(self, pixels, filter_type=0):
-        """High-level rgba 2d roundtrip."""
-        png = encode_rgba(pixels, filter_type=filter_type)
-        back = decode_rgba(png)
-        self.assertEqual(back, pixels)
-
-    def assert_raises_value_err(self, msg_substr, func, *a, **k):
-        """Assert ValueError whose str contains substr (case-insens)."""
-        with self.assertRaises(ValueError) as ctx:
-            func(*a, **k)
-        self.assertIn(msg_substr.lower(), str(ctx.exception).lower())
-
-
-# --- Tiny packers (test-only) for low-bd data to feed encode/decode ---
-
-def _pack_1bit(values, width):
-    """Pack list of 0/1 ints (left-to-right) into bytes, MSB first per PNG."""
-    rowb = (width + 7) // 8
-    data = bytearray(rowb)
-    for x, v in enumerate(values):
-        if v:
-            byte_i = x // 8
-            bit = 7 - (x % 8)
-            data[byte_i] |= (1 << bit)
-    return bytes(data)
-
-
-def _pack_2bit(values, width):
-    """Pack 0-3 ints, 4 samples/byte, high bits first."""
-    rowb = (width + 3) // 4
-    data = bytearray(rowb)
-    for x, v in enumerate(values):
-        byte_i = x // 4
-        shift = 6 - 2 * (x % 4)
-        data[byte_i] |= ((v & 3) << shift)
-    return bytes(data)
-
-
-def _pack_4bit(values, width):
-    """Pack 0-15 ints, 2 samples/byte, high nibble first."""
-    rowb = (width + 1) // 2
-    data = bytearray(rowb)
-    for x, v in enumerate(values):
-        byte_i = x // 2
-        if x % 2 == 0:
-            data[byte_i] |= ((v & 15) << 4)
-        else:
-            data[byte_i] |= (v & 15)
-    return bytes(data)
-
-
+# (helpers extracted to reusable test_helpers.py; see import above + that file)
 # --- Test classes (every method has GWT docstring; focused + subTest where good) ---
 
 class TestPaeth(RadicalTestCase):
@@ -294,12 +71,12 @@ class TestPaeth(RadicalTestCase):
         When calling with the demo cases + 0/255 edges
         Then returns exactly the documented closest value
         """
-        self.assertEqual(paeth_predictor(10, 20, 5), 20)
-        self.assertEqual(paeth_predictor(5, 20, 10), 20)
-        self.assertEqual(paeth_predictor(10, 5, 20), 5)
-        self.assertEqual(paeth_predictor(0, 0, 0), 0)
-        self.assertEqual(paeth_predictor(255, 255, 255), 255)
-        self.assertEqual(paeth_predictor(10, 0, 255), 0)  # p=-245, closest is b=0
+        self.equa(paeth_predictor(10, 20, 5), 20)
+        self.equa(paeth_predictor(5, 20, 10), 20)
+        self.equa(paeth_predictor(10, 5, 20), 5)
+        self.equa(paeth_predictor(0, 0, 0), 0)
+        self.equa(paeth_predictor(255, 255, 255), 255)
+        self.equa(paeth_predictor(10, 0, 255), 0)  # p=-245, closest is b=0
 
 
 class TestBppAndRowBytes(RadicalTestCase):
@@ -309,24 +86,24 @@ class TestBppAndRowBytes(RadicalTestCase):
         Then correct byte counts (incl bit-packed) + ValueError on bad ct
         """
         # bpp
-        self.assertEqual(get_bpp(0, 8), 1)
-        self.assertEqual(get_bpp(0, 1), 1)
-        self.assertEqual(get_bpp(2, 8), 3)
-        self.assertEqual(get_bpp(6, 8), 4)
-        self.assertEqual(get_bpp(2, 16), 6)
-        self.assertEqual(get_bpp(0, 16), 2)
-        self.assertEqual(get_bpp(3, 4), 1)
+        self.equa(get_bpp(0, 8), 1)
+        self.equa(get_bpp(0, 1), 1)
+        self.equa(get_bpp(2, 8), 3)
+        self.equa(get_bpp(6, 8), 4)
+        self.equa(get_bpp(2, 16), 6)
+        self.equa(get_bpp(0, 16), 2)
+        self.equa(get_bpp(3, 4), 1)
         # row bytes
-        self.assertEqual(get_row_bytes(1, 0, 8), 1)
-        self.assertEqual(get_row_bytes(200, 0, 8), 200)
-        self.assertEqual(get_row_bytes(1, 2, 8), 3)
-        self.assertEqual(get_row_bytes(1, 6, 8), 4)
-        self.assertEqual(get_row_bytes(9, 0, 1), 2)  # 9 bits -> 2 bytes
-        self.assertEqual(get_row_bytes(1, 0, 1), 1)
-        self.assertEqual(get_row_bytes(1, 6, 16), 8)
-        with self.assertRaises(ValueError):
+        self.equa(get_row_bytes(1, 0, 8), 1)
+        self.equa(get_row_bytes(200, 0, 8), 200)
+        self.equa(get_row_bytes(1, 2, 8), 3)
+        self.equa(get_row_bytes(1, 6, 8), 4)
+        self.equa(get_row_bytes(9, 0, 1), 2)  # 9 bits -> 2 bytes
+        self.equa(get_row_bytes(1, 0, 1), 1)
+        self.equa(get_row_bytes(1, 6, 16), 8)
+        with self.rais(ValueError):
             get_bpp(99, 8)
-        with self.assertRaises(ValueError):
+        with self.rais(ValueError):
             get_row_bytes(10, 99, 8)
 
 
@@ -341,14 +118,14 @@ class TestIHDR(RadicalTestCase):
             'bit_depth': 8, 'color_type': 0,
             'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
         }
-        self.assertEqual(parse_ihdr(make_ihdr(d)), d)
+        self.equa(parse_ihdr(make_ihdr(d)), d)
 
         d2 = {'width': 1, 'height': 1, 'bit_depth': 1, 'color_type': 3}
         made = make_ihdr(d2)
         p = parse_ihdr(made)
-        self.assertEqual(p['width'], 1)
-        self.assertEqual(p['bit_depth'], 1)
-        self.assertEqual(p['color_type'], 3)
+        self.equa(p['width'], 1)
+        self.equa(p['bit_depth'], 1)
+        self.equa(p['color_type'], 3)
 
     def test_ihdr_parse_errors(self):
         """Given bad ihdr bytes (len, zero dim, bad methods, bad ct/bd combo)
@@ -372,8 +149,8 @@ class TestPLTE(RadicalTestCase):
         """
         pal = [(0,0,0), (255,0,0), (0,255,0)]
         data = make_plte(pal)
-        self.assertEqual(parse_plte(data), pal)
-        self.assertEqual(len(data), 9)
+        self.equa(parse_plte(data), pal)
+        self.equa(len(data), 9)
 
         self.assert_raises_value_err('1..256', make_plte, [])
         self.assert_raises_value_err('1..256', make_plte, [(1,2,3)] * 257)
@@ -400,11 +177,11 @@ class TestChunksAndSig(RadicalTestCase):
         Then length correct + crc32(typ+data) matches the trailer
         """
         ch = make_chunk(b'IHDR', b'\0'*13)
-        self.assertEqual(len(ch), 4+4+13+4)
-        self.assertEqual(ch[4:8], b'IHDR')
+        self.equa(len(ch), 4+4+13+4)
+        self.equa(ch[4:8], b'IHDR')
         crc = struct.unpack('>I', ch[-4:])[0]
         expected = zlib.crc32(b'IHDR' + b'\0'*13) & 0xffffffff
-        self.assertEqual(crc, expected)
+        self.equa(crc, expected)
 
         self.assert_raises_value_err('4 bytes', make_chunk, b'ABC', b'')
 
@@ -421,22 +198,22 @@ class TestChunksAndSig(RadicalTestCase):
         with io.BytesIO(p) as f:
             check_signature(f)
             chunks = list(iter_chunks(f))
-            self.assertEqual([t for t,d in chunks], [b'IHDR', b'IDAT', b'IEND'])
+            self.equa([t for t,d in chunks], [b'IHDR', b'IDAT', b'IEND'])
 
         # bad crc
         bad = bytearray(p)
         bad[-5] ^= 0xff  # flip in IEND crc area-ish
         with io.BytesIO(bad) as f:
             check_signature(f)
-            with self.assertRaises(ValueError) as ctx:
+            with self.rais(ValueError) as ctx:
                 list(iter_chunks(f))
-            self.assertIn('CRC', str(ctx.exception))
+            self.isin('CRC', str(ctx.exception))
 
         # trunc
         short = p[:-10]
         with io.BytesIO(short) as f:
             check_signature(f)
-            with self.assertRaises(ValueError):
+            with self.rais(ValueError):
                 list(iter_chunks(f))
 
 
@@ -452,7 +229,7 @@ class TestFilterUnfilter(RadicalTestCase):
             with self.subTest(filter_type=ft):
                 filt = apply_filter(orig, W, H, 0, 8, filter_type=ft)
                 recon = unfilter(filt, W, H, 0, 8)
-                self.assertEqual(recon, bytes(orig))
+                self.equa(recon, bytes(orig))
 
     def test_filter_type0_is_identity_plus_ft_errors(self):
         """Given raw + ft=0
@@ -461,8 +238,8 @@ class TestFilterUnfilter(RadicalTestCase):
         """
         raw = b'\x01\x02\x03\x04'
         filt = apply_filter(raw, 4, 1, 0, 8, filter_type=0)
-        self.assertEqual(filt[0], 0)
-        self.assertEqual(filt[1:], raw)
+        self.equa(filt[0], 0)
+        self.equa(filt[1:], raw)
         self.assert_raises_value_err('0-4', apply_filter, raw, 4, 1, 0, 8, filter_type=5)
         self.assert_raises_value_err('length', apply_filter, b'abc', 4, 1, 0, 8, 0)
 
@@ -474,11 +251,11 @@ class TestFilterUnfilter(RadicalTestCase):
         # ct6 bd8 (w=2 h=1 to keep small; rowb=8)
         raw6 = bytes(list(range(8)))
         f6 = apply_filter(raw6, 2, 1, 6, 8, 4)
-        self.assertEqual(unfilter(f6, 2, 1, 6, 8), raw6)
+        self.equa(unfilter(f6, 2, 1, 6, 8), raw6)
         # ct0 bd1 (w=8 rowb=1)
         raw1 = _pack_1bit([1,0,1,0,1,0,1,0], 8)
         f1 = apply_filter(raw1, 8, 1, 0, 1, 1)
-        self.assertEqual(unfilter(f1, 8, 1, 0, 1), raw1)
+        self.equa(unfilter(f1, 8, 1, 0, 1), raw1)
 
 
 class TestEncoder(RadicalTestCase):
@@ -502,7 +279,7 @@ class TestEncoder(RadicalTestCase):
         ih3 = dict(ih, color_type=3)
         self.assert_raises_value_err('palette', encode_png, ih3, b'\0\0')
         ih_i = dict(ih, interlace_method=1)
-        with self.assertRaises(NotImplementedError):
+        with self.rais(NotImplementedError):
             encode_png(ih_i, b'\0\0')
 
 
@@ -518,10 +295,10 @@ class TestDecoder(RadicalTestCase):
             '0000000a49444154789c63f80f0001010100b138f6140000000049454e44ae426082'
         )
         d0 = decode_png(p0)
-        self.assertEqual(d0['width'], 1)
-        self.assertEqual(d0['color_type'], 0)
-        self.assertEqual(d0['data'], b'\xff')
-        self.assertIsNone(d0['palette'])
+        self.equa(d0['width'], 1)
+        self.equa(d0['color_type'], 0)
+        self.equa(d0['data'], b'\xff')
+        self.equa(d0['palette'], None)
 
         # ct3
         p3 = PNG_SIGNATURE + bytes.fromhex(
@@ -529,8 +306,8 @@ class TestDecoder(RadicalTestCase):
             '00000003504c5445ff000019e209370000000a49444154789c636000000002000148afa4710000000049454e44ae426082'
         )
         d3 = decode_png(p3)
-        self.assertEqual(d3['color_type'], 3)
-        self.assertEqual(d3['palette'], [(255, 0, 0)])
+        self.equa(d3['color_type'], 3)
+        self.equa(d3['palette'], [(255, 0, 0)])
 
         # ct6 + rgba
         p6 = PNG_SIGNATURE + bytes.fromhex(
@@ -538,9 +315,9 @@ class TestDecoder(RadicalTestCase):
             '0000000d49444154789c63606060f80f00010401005fe5c34b0000000049454e44ae426082'
         )
         d6 = decode_png(p6)
-        self.assertEqual(d6['color_type'], 6)
+        self.equa(d6['color_type'], 6)
         pix = decode_rgba(p6)
-        self.assertEqual(pix, [[(0, 0, 0, 255)]])
+        self.equa(pix, [[(0, 0, 0, 255)]])
 
     def test_decode_rgba_wrong_ct_raises(self):
         """Given non-ct6/8 png (ct2)
@@ -629,7 +406,7 @@ class TestFullRoundtrips(RadicalTestCase):
         Then roundtrips and 1x1 decode_rgba works
         """
         p1 = encode_rgba([[(0,0,0,255)]])
-        self.assertEqual(decode_rgba(p1), [[(0, 0, 0, 255)]])
+        self.equa(decode_rgba(p1), [[(0, 0, 0, 255)]])
         self.assert_png_roundtrip(
             {'width':1,'height':1,'bit_depth':8,'color_type':0,
              'compression_method':0,'filter_method':0,'interlace_method':0},
@@ -655,8 +432,8 @@ class TestChunkEdges(RadicalTestCase):
               make_chunk(b'tEXt', b'key\0value from radical test') + \
               make_chunk(b'IEND', b'')
         dec = decode_png(png)
-        self.assertEqual(dec['data'], raw)
-        self.assertEqual(dec['color_type'], 0)
+        self.equa(dec['data'], raw)
+        self.equa(dec['color_type'], 0)
 
     def test_decode_accepts_path_and_bytes(self):
         """Given a produced png on disk and as bytes/bytearray
@@ -680,8 +457,8 @@ class TestChunkEdges(RadicalTestCase):
         finally:
             if os.path.exists(tmp):
                 os.unlink(tmp)
-        self.assertEqual(d1['data'], d2['data'])
-        self.assertEqual(d1['data'], d3['data'])
+        self.equa(d1['data'], d2['data'])
+        self.equa(d1['data'], d3['data'])
 
 
 class TestIntegration(RadicalTestCase):
@@ -691,18 +468,18 @@ class TestIntegration(RadicalTestCase):
         Then dims/ct match + data roundtrips (integration with real file)
         """
         d = decode_png('canvas_output.png')
-        self.assertEqual(d['width'], 400)
-        self.assertEqual(d['height'], 300)
-        self.assertEqual(d['color_type'], 6)
-        self.assertEqual(d['bit_depth'], 8)
-        self.assertIsNone(d['palette'])
+        self.equa(d['width'], 400)
+        self.equa(d['height'], 300)
+        self.equa(d['color_type'], 6)
+        self.equa(d['bit_depth'], 8)
+        self.equa(d['palette'], None)
 
         # re-encode the extracted data (note: canvas used default ft=0)
         ih = {k: d[k] for k in ('width','height','bit_depth','color_type',
                                 'compression_method','filter_method','interlace_method')}
         png2 = encode_png(ih, d['data'], filter_type=0)
         d2 = decode_png(png2)
-        self.assertEqual(d2['data'], d['data'])
+        self.equa(d2['data'], d['data'])
 
 
 class TestHelpers(RadicalTestCase):
@@ -717,14 +494,14 @@ class TestHelpers(RadicalTestCase):
         and more
         """
         g, w, t = parse_gwt(doc)
-        self.assertIn('foo bar', g)
-        self.assertIn('do thing', w)
-        self.assertIn('expect good', t)
+        self.isin('foo bar', g)
+        self.isin('do thing', w)
+        self.isin('expect good', t)
 
         raw_typ = 'test_foo (TestBar) ... ok\nTestHelpers.test_parse... ... FAIL\n'
         nice = beautify_unittest_output(raw_typ)
-        self.assertIn('SCENARIO:', nice)
-        self.assertIn('Status:', nice)
+        self.isin('SCENARIO:', nice)
+        self.isin('Status:', nice)
 
 
 # --- Run entry points (the convenient way) ---
