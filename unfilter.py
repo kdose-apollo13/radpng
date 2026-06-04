@@ -5,7 +5,6 @@
 from row_bytes import get_row_bytes
 from bpp import get_bpp
 from paeth import paeth_predictor
-from filter import filter
 
 
 def unfilter(filtered, width, height, color_type, bit_depth):
@@ -73,15 +72,18 @@ def unfilter(filtered, width, height, color_type, bit_depth):
 if __name__ == '__main__':
     print('=== unfilter demo ===')
 
-    # 4x2 gray8 synthetic (bpp=1) -- custom known data written here
+    # 4x2 gray8 synthetic -- now from shared excised test helper (see test_helpers.py)
+    from filters import apply_filter
+    from test_helpers import make_gray_test_data
+
     W, H = 4, 2
-    orig = bytearray((x + y * 3) * 40 % 256 for y in range(H) for x in range(W))
+    orig = make_gray_test_data(W, H)
     print('orig:', list(orig))
 
     for ftype in range(5):
-        filt = filter(orig, W, H, 0, 8, filter_type=ftype)
+        filt = apply_filter(orig, W, H, 0, 8, filter_type=ftype)
         recon = unfilter(filt, W, H, 0, 8)
         assert list(recon) == list(orig), f'roundtrip failed for filter type {ftype}'
         print(f'  filter {ftype} roundtrip ok')
 
-    # all 5 proven (paeth edges included) via filter + unfilter symmetry on custom data
+    # all 5 proven (paeth edges included) via apply_filter + unfilter symmetry on shared helper data

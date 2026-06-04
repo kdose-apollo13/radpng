@@ -1,5 +1,5 @@
 """
-    filter
+    apply_filter
     applies the 5 png filters to raw scanline bytes, producing filter-byte-prefixed rows for zlib
 """
 from row_bytes import get_row_bytes
@@ -7,7 +7,7 @@ from bpp import get_bpp
 from paeth import paeth_predictor
 
 
-def filter(raw, width, height, color_type, bit_depth, filter_type=0):
+def apply_filter(raw, width, height, color_type, bit_depth, filter_type=0):
     """
         raw
             : bytes | bytearray
@@ -73,19 +73,20 @@ def filter(raw, width, height, color_type, bit_depth, filter_type=0):
 
 
 if __name__ == '__main__':
-    print('=== filter demo ===')
+    print('=== apply_filter demo ===')
 
-    # 4x2 gray8 synthetic (same as unfilter test) -- custom known data
-    W, H = 4, 2
-    orig = bytearray((x + y * 3) * 40 % 256 for y in range(H) for x in range(W))
-    print('orig:', list(orig))
-
+    # 4x2 gray8 synthetic -- now from shared excised test helper (see test_helpers.py)
+    from test_helpers import make_gray_test_data
     from unfilter import unfilter
 
+    W, H = 4, 2
+    orig = make_gray_test_data(W, H)
+    print('orig:', list(orig))
+
     for ftype in range(5):
-        filt = filter(orig, W, H, 0, 8, filter_type=ftype)
+        filt = apply_filter(orig, W, H, 0, 8, filter_type=ftype)
         recon = unfilter(filt, W, H, 0, 8)
         assert list(recon) == list(orig), f'roundtrip failed for filter type {ftype}'
         print(f'  filter {ftype} roundtrip ok')
 
-    # all 5 proven (paeth edges included) with custom data; symmetry with unfilter exercised
+    # all 5 proven (paeth edges included) with shared helper data; symmetry with unfilter exercised

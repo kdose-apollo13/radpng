@@ -41,7 +41,7 @@ from plte import parse_plte, make_plte
 from row_bytes import get_row_bytes
 from bpp import get_bpp
 from paeth import paeth_predictor
-from filter import filter
+from filters import apply_filter
 from unfilter import unfilter
 from encoder import encode_png, encode_rgba
 from decoder import decode_png, decode_rgba
@@ -450,7 +450,7 @@ class TestFilterUnfilter(RadicalTestCase):
         orig = bytearray((x + y * 3) * 40 % 256 for y in range(H) for x in range(W))
         for ft in range(5):
             with self.subTest(filter_type=ft):
-                filt = filter(orig, W, H, 0, 8, filter_type=ft)
+                filt = apply_filter(orig, W, H, 0, 8, filter_type=ft)
                 recon = unfilter(filt, W, H, 0, 8)
                 self.assertEqual(recon, bytes(orig))
 
@@ -460,11 +460,11 @@ class TestFilterUnfilter(RadicalTestCase):
         Then first byte of each row is 0 and payload == raw; bad ft raises
         """
         raw = b'\x01\x02\x03\x04'
-        filt = filter(raw, 4, 1, 0, 8, filter_type=0)
+        filt = apply_filter(raw, 4, 1, 0, 8, filter_type=0)
         self.assertEqual(filt[0], 0)
         self.assertEqual(filt[1:], raw)
-        self.assert_raises_value_err('0-4', filter, raw, 4, 1, 0, 8, filter_type=5)
-        self.assert_raises_value_err('length', filter, b'abc', 4, 1, 0, 8, 0)
+        self.assert_raises_value_err('0-4', apply_filter, raw, 4, 1, 0, 8, filter_type=5)
+        self.assert_raises_value_err('length', apply_filter, b'abc', 4, 1, 0, 8, 0)
 
     def test_filter_unfilter_other_ct_bd(self):
         """Given ct=2/6/4 and bd=1/16 cases (bpp >1 or packed)
@@ -473,11 +473,11 @@ class TestFilterUnfilter(RadicalTestCase):
         """
         # ct6 bd8 (w=2 h=1 to keep small; rowb=8)
         raw6 = bytes(list(range(8)))
-        f6 = filter(raw6, 2, 1, 6, 8, 4)
+        f6 = apply_filter(raw6, 2, 1, 6, 8, 4)
         self.assertEqual(unfilter(f6, 2, 1, 6, 8), raw6)
         # ct0 bd1 (w=8 rowb=1)
         raw1 = _pack_1bit([1,0,1,0,1,0,1,0], 8)
-        f1 = filter(raw1, 8, 1, 0, 1, 1)
+        f1 = apply_filter(raw1, 8, 1, 0, 1, 1)
         self.assertEqual(unfilter(f1, 8, 1, 0, 1), raw1)
 
 

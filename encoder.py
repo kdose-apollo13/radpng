@@ -9,7 +9,7 @@ import zlib
 
 from signature import PNG_SIGNATURE
 from row_bytes import get_row_bytes
-from filter import filter
+from filters import apply_filter
 from make_chunk import make_chunk
 from ihdr import make_ihdr, parse_ihdr
 from plte import make_plte
@@ -28,7 +28,7 @@ def encode_png(ihdr, data, palette=None, filter_type=0):
             : required only for color_type=3; list of (r,g,b)
         filter_type
             : int
-            : 0-4 passed to filter() for all rows (0 is simplest/always valid)
+            : 0-4 passed to apply_filter() for all rows (0 is simplest/always valid)
 
         returns
             > bytes
@@ -58,7 +58,7 @@ def encode_png(ihdr, data, palette=None, filter_type=0):
     if len(data) != h * rowb:
         raise ValueError(f'data length {len(data)} != expected {h * rowb} for {w}x{h}')
 
-    filt = filter(data, w, h, ct, bd, filter_type=filter_type)
+    filt = apply_filter(data, w, h, ct, bd, filter_type=filter_type)
     comp = zlib.compress(filt)
 
     out = bytearray(PNG_SIGNATURE)
@@ -110,9 +110,11 @@ def encode_rgba(pixels, filter_type=0):
 if __name__ == '__main__':
     print('=== encoder demo ===')
 
-    # reuse synthetic from filter/unfilter tests (ct0 gray8)
+    # use shared excised test helpers (see test_helpers.py)
+    from test_helpers import make_gray_test_data, make_small_rgba_test_pixels
+
     W, H = 4, 2
-    orig = bytearray((x + y * 3) * 40 % 256 for y in range(H) for x in range(W))
+    orig = make_gray_test_data(W, H)
     ih = {
         'width': W, 'height': H,
         'bit_depth': 8, 'color_type': 0,
@@ -127,8 +129,8 @@ if __name__ == '__main__':
         assert d['width'] == W and d['data'] == bytes(orig)
         print(f'  ct0 filter{ft} roundtrip ok (png len {len(pngb)})')
 
-    # rgba 2d small grid via high level + decode_rgba
-    pix = [[(10, 20, 30, 255), (40, 50, 60, 128)] for _ in range(3)]
+    # rgba 2d small grid via high level + decode_rgba (from shared helper)
+    pix = make_small_rgba_test_pixels()
     b = encode_rgba(pix, filter_type=4)
     back = decode_rgba(b)
     assert back == pix

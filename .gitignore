@@ -1,0 +1,5 @@
+*.py[cozd]
+__pycache__/
+
+*.egg-info/
+
