@@ -116,37 +116,41 @@ def encode_rgba(pixels, filter_type=0):
 if __name__ == '__main__':
     print('=== encoder demo ===')
 
-    # use shared excised test helpers (see test_helpers.py)
-    # from test_helpers import make_gray_test_data, make_small_rgba_test_pixels
+    # 4x2 gray8 synthetic (same expression as TestFilterUnfilter; "same as lib demos")
+    W, H = 4, 2
+    orig = bytearray((x + y * 3) * 40 % 256 for y in range(H) for x in range(W))
+    ih = {
+        'width': W, 'height': H,
+        'bit_depth': 8, 'color_type': 0,
+        'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
+    }
 
-    # W, H = 4, 2
-    # orig = make_gray_test_data(W, H)
-    # ih = {
-    #     'width': W, 'height': H,
-    #     'bit_depth': 8, 'color_type': 0,
-    #     'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
-    # }
-    #
-    # from decoder import decode_png, decode_rgba
-    #
-    # for ft in range(5):
-    #     pngb = encode_png(ih, bytes(orig), filter_type=ft)
-    #     d = decode_png(pngb)
-    #     assert d['width'] == W and d['data'] == bytes(orig)
-    #     print(f'  ct0 filter{ft} roundtrip ok (png len {len(pngb)})')
-    #
-    # # rgba 2d small grid via high level + decode_rgba (from shared helper)
-    # pix = make_small_rgba_test_pixels()
-    # b = encode_rgba(pix, filter_type=4)
-    # back = decode_rgba(b)
-    # assert back == pix
-    # d = decode_png(b)
-    # assert d['color_type'] == 6 and d['bit_depth'] == 8
-    # print('rgba 3x2 (paeth) roundtrip ok (png len', len(b), ')')
-    #
-    # # 1x1 edge
-    # p1 = encode_rgba([[(0, 0, 0, 255)]])
-    # assert decode_rgba(p1) == [[(0, 0, 0, 255)]]
-    # print('rgba 1x1 ok')
-    #
-    # print('all encoder cases ok')
+    from decoder import decode_png, decode_rgba
+
+    for ft in range(5):
+        pngb = encode_png(ih, bytes(orig), filter_type=ft)
+        d = decode_png(pngb)
+        assert d['width'] == W and d['data'] == bytes(orig)
+        print(f'  ct0 filter{ft} roundtrip ok (png len {len(pngb)})')
+
+    # rgba small grid (2x1; paeth) via high level + decode_rgba
+    pix = [[(1, 2, 3, 255), (4, 5, 6, 128)]]
+    b = encode_rgba(pix, filter_type=4)
+    back = decode_rgba(b)
+    assert back == pix
+    d = decode_png(b)
+    assert d['color_type'] == 6 and d['bit_depth'] == 8
+    print('rgba 2x1 (paeth) roundtrip ok (png len', len(b), ')')
+
+    # 1x1 edge (matches decoder + test cases)
+    p1 = encode_rgba([[(0, 0, 0, 255)]])
+    assert decode_rgba(p1) == [[(0, 0, 0, 255)]]
+    print('rgba 1x1 ok')
+
+    # error path (style match to decoder/make_chunk/check demos)
+    try:
+        encode_rgba([])
+    except ValueError as e:
+        print('empty rgba raised:', 'non-empty' in str(e).lower())
+
+    print('all encoder cases ok')
