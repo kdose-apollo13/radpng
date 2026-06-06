@@ -75,12 +75,11 @@ def apply_filter(raw, width, height, color_type, bit_depth, filter_type=0):
 if __name__ == '__main__':
     print('=== apply_filter demo ===')
 
-    # 4x2 gray8 synthetic -- now from shared excised test helper (see test_helpers.py)
-    from test_helpers import make_gray_test_data
     from unfilter import unfilter
 
     W, H = 4, 2
-    orig = make_gray_test_data(W, H)
+    orig = bytearray((x + y * 3) * 40 % 256 for y in range(H) for x in range(W))
+
     print('orig:', list(orig))
 
     for ftype in range(5):
