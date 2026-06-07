@@ -5,37 +5,9 @@
     one atom.
 """
 import math
-
-
-def _safe_log(x):
-    return math.log(x) if x > 0 else 0.0
-
-
-def _normalize(series):
-    if not series:
-        return []
-    m = max(series) or 1.0
-    return [v / m for v in series]
-
-
-def _model_error(ns, ts, model_fn):
-    """Crude normalized L2-ish relative error after scaling model to data tail."""
-    if len(ns) < 2 or len(ts) < 2:
-        return 1.0
-    # scale model to match last observed time
-    model_last = model_fn(ns[-1]) or 1.0
-    scale = (ts[-1] or 1.0) / model_last
-    err = 0.0
-    n = 0
-    for n_i, t_i in zip(ns, ts):
-        m = model_fn(n_i) * scale
-        if t_i <= 0:
-            continue
-        # relative error on time
-        rel = abs(t_i - m) / max(t_i, 1e-9)
-        err += rel * rel
-        n += 1
-    return math.sqrt(err / max(n, 1))
+from rlab.safe_log import safe_log as _safe_log
+from rlab.normalize_series import normalize_series as _normalize
+from rlab.model_error import model_error as _model_error
 
 
 def guess_complexity(ns, ts):

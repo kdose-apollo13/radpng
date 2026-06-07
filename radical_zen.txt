@@ -1,10 +1,10 @@
-
-// think -> PATTON-style war on complexity //
+// think -> PATTON-style war on complexity, tempered by observation //
 
 // 'radical coding' is a work in progress, an ethos still condensing //
 // it shouldn't constrain implementations (probably) //
 // but it should be ruthless about constraining style and architecture //
 // this metaguidance may also change and evolve //
+// after building (and then purifying) a real system, we add lived nuance. //
 
 The Radical Zen of Python
 =========================
@@ -23,6 +23,8 @@ Bytes beat objects; dicts beat classes—unless the GUI demands otherwise.
 
 Read it top to bottom.
 If you cannot, split it.
+(If splitting increases the burden of understanding the whole, name that cost.)
+
 Cognitive burden is the enemy; simplicity is the weapon.
 
 `: ` for what goes in.
@@ -58,6 +60,17 @@ Radical is not reckless.
 Radical is Patton on complexity: decompose, march, accept the cost.
 Some generality deferred is complexity slain.
 
+When the rule feels ridiculous, try the split anyway.
+The observation of the resulting system is part of the practice.
+
 Beautiful tests, boring code.
 Informative failures, quiet successes.
 When all pass: Radical!
+
+Observe what the rules create.
+Duplication in 2nd-order tests may be the honest price of isolation.
+Orchestrators grow; name the tension and keep them at the edges.
+This document is itself an atom. When it no longer reads top to bottom, rewrite it.
+
+The style has successes (isolation, teachability, fearless replacement) and costs (file count, composition friction, the temptation to stop splitting).
+Name both. Evolve deliberately.

@@ -6,13 +6,8 @@
 """
 from contextlib import contextmanager
 
-from rlab.perf_timer import time_call, WALL_TIMER
-
-
-def _default_name(fn, explicit=None):
-    if explicit:
-        return explicit
-    return getattr(fn, '__qualname__', getattr(fn, '__name__', str(fn)))
+from rlab.perf_timer import WALL_TIMER
+from rlab.recorder import Recorder  # extracted (the stateful recorder object is now its own atom)
 
 
 def make_call_recorder(base_measurer=WALL_TIMER):
@@ -21,39 +16,9 @@ def make_call_recorder(base_measurer=WALL_TIMER):
             : the measurer used for each wrapped call (default WALL_TIMER)
 
         returns
-            > recorder object with:
-            >   .wrap(fn, name=None) -> wrapped callable (records on every call)
-            >   .stats() -> dict name -> {'calls': int, 'time': float}
-            >   .reset()
+            > Recorder instance (see recorder.py)
     """
-    stats = {}
-
-    class _Recorder:
-        def wrap(self, fn, name=None):
-            label = _default_name(fn, name)
-
-            def _wrapped(*a, **k):
-                dt = time_call(fn, *a, **k, measurer=base_measurer)
-                if label not in stats:
-                    stats[label] = {'calls': 0, 'time': 0.0}
-                stats[label]['calls'] += 1
-                stats[label]['time'] += dt
-                return  # the original return value is intentionally dropped for pure timing wrappers
-                        # (callers that need the value should wrap a closure that captures it,
-                        #  or use the session around a higher-level subject)
-
-            # preserve a little identity for debugging
-            _wrapped.__name__ = f"wrapped({label})"
-            return _wrapped
-
-        def stats(self):
-            # return a shallow copy so callers cannot mutate our internal dict
-            return {k: v.copy() for k, v in stats.items()}
-
-        def reset(self):
-            stats.clear()
-
-    return _Recorder()
+    return Recorder(base_measurer=base_measurer)
 
 
 @contextmanager

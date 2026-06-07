@@ -14,6 +14,7 @@ from rlab.perf_timer import (
     CPU_TIMER,
     make_repeated_timer,
 )
+from rlab.tests.tiny_work import tiny_work
 
 
 class TestPerfTimer(RadicalTestCase):
@@ -23,14 +24,11 @@ class TestPerfTimer(RadicalTestCase):
         Then returns non-negative float seconds and func ran
         """
         side = []
-        def work(n):
+        def side_work(n):
             side.append(n)
-            s = 0
-            for i in range(n):
-                s = (s + i) & 0xff
-            return s
+            return tiny_work(n)
 
-        dt = time_call(work, 200)
+        dt = time_call(side_work, 200)
         self.asrt(dt >= 0.0)
         self.equa(side, [200])
 
@@ -39,11 +37,8 @@ class TestPerfTimer(RadicalTestCase):
         When time_call(..., measurer=...)
         Then both produce >=0 results for same work
         """
-        def work(n):
-            return sum(range(n)) & 0xff
-
-        dt_wall = time_call(work, 100, measurer=WALL_TIMER)
-        dt_cpu = time_call(work, 100, measurer=CPU_TIMER)
+        dt_wall = time_call(tiny_work, 100, measurer=WALL_TIMER)
+        dt_cpu = time_call(tiny_work, 100, measurer=CPU_TIMER)
         self.asrt(dt_wall >= 0.0)
         self.asrt(dt_cpu >= 0.0)
 
@@ -52,11 +47,8 @@ class TestPerfTimer(RadicalTestCase):
         When make_repeated_timer then time_call with it
         Then result >=0 and is the min of the individual runs
         """
-        def work(n):
-            return (n * 31) & 0xff
-
         rt = make_repeated_timer(WALL_TIMER, reps=3, reducer=min)
-        dt = time_call(work, 50, measurer=rt)
+        dt = time_call(tiny_work, 50, measurer=rt)
         self.asrt(dt >= 0.0)
         # sanity: repeated name contains info
         self.isin('repeated', rt.__name__.lower())

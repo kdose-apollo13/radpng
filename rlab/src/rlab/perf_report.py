@@ -4,19 +4,8 @@
     explicit formatting. consumes perf_complexity. one atom.
 """
 from rlab.perf_complexity import guess_complexity
-
-
-def _fmt_ms(t):
-    return f"{t*1000:8.3f}"
-
-
-def _get_primary_label(times_dict):
-    # prefer wall / repeated / first key
-    for pref in ('wall', 'perf_counter', 'min', 'repeated'):
-        for k in times_dict:
-            if pref in k.lower():
-                return k
-    return next(iter(times_dict.keys())) if times_dict else None
+from rlab.fmt_ms import fmt_ms as _fmt_ms  # extracted
+from rlab.primary_label import primary_label as _get_primary_label  # extracted
 
 
 def format_perf_report(results, title='perf report'):

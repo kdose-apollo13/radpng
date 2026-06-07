@@ -5,25 +5,8 @@
     Composes perf_timer. Pure stdlib. Thin surface.
 """
 from rlab.perf_timer import time_call, WALL_TIMER, make_repeated_timer
-
-
-def _pixels_from_size(size):
-    """Best-effort pixel count for common (w, h) or int sizes."""
-    if isinstance(size, (list, tuple)) and len(size) == 2:
-        try:
-            w, h = int(size[0]), int(size[1])
-            return w * h
-        except Exception:
-            return None
-    if isinstance(size, int):
-        return size
-    return None
-
-
-def _name_of(obj, fallback='subject'):
-    if isinstance(obj, str):
-        return obj
-    return getattr(obj, '__name__', fallback)
+from rlab.pixels import pixels_from_size as _pixels_from_size  # extracted single-job atom
+from rlab.name_of import name_of as _name_of  # extracted single-job atom
 
 
 def scale(
