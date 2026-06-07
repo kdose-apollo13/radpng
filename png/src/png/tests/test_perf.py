@@ -1,33 +1,22 @@
 """
 RADICAL PNG PERF / BENCH (basic)
 
-One test file in the tests/ dir for cross-atom perf smoke.
-Uses on-demand make_synthetic_png / image_data helpers for convenient
-different file sizes (no fs, pure, deterministic).
-
-Exercises encode/decode + filter paths on varied sizes.
-Reports timings (ms) via prints (visible under Radical runner).
-GWT on methods. Pure stdlib (time + unittest).
-
-No hard thresholds (pure-py loops are what they are); this proves
-size variation works conveniently and surfaces gross scaling.
+Cross-atom perf smoke. GWT on methods. Pure stdlib.
 """
-import os
 import sys
-
 import time
-import unittest
-from test_helpers import (
-    RadicalTestCase, RadicalTextTestRunner,
-    make_synthetic_png, make_synthetic_image_data,
-)
+
 from png.encoder import encode_png
 from png.decoder import decode_png
 from png.filters import apply_filter
 from png.unfilter import unfilter
+from png.synth_png import make_synthetic_png
+from png.synth_data import make_synthetic_image_data
+from png.tests.png_test_case import PngTestCase
+from rlab.run_suite import run_module_tests
 
 
-class TestPerfEncodeDecode(RadicalTestCase):
+class TestPerfEncodeDecode(PngTestCase):
     def test_basic_perf_sizes_ct0_and_ct6(self):
         """Given the make_synthetic_png helper (on-demand different file sizes)
         When timing encode_png + decode_png on several (w,h) for ct0/6 bd8
@@ -41,8 +30,8 @@ class TestPerfEncodeDecode(RadicalTestCase):
                     t0 = time.perf_counter()
                     d = decode_png(png)
                     t1 = time.perf_counter()
-                    ih = {k: d[k] for k in ('width','height','bit_depth','color_type',
-                                            'compression_method','filter_method','interlace_method')}
+                    ih = {k: d[k] for k in ('width', 'height', 'bit_depth', 'color_type',
+                                            'compression_method', 'filter_method', 'interlace_method')}
                     p2 = encode_png(ih, d['data'], filter_type=0)
                     t2 = time.perf_counter()
                     self.equa(d['data'], decode_png(p2)['data'])
@@ -70,13 +59,6 @@ class TestPerfEncodeDecode(RadicalTestCase):
                     print(f'    filter+unfilter {w}x{h} ct{ct} ft{ft}: {dt:.2f}ms')
 
 
-def run_all_tests(verbosity=2):
-    runner = RadicalTextTestRunner(verbosity=verbosity)
-    loader = unittest.TestLoader()
-    suite = loader.loadTestsFromModule(sys.modules[__name__])
-    return runner.run(suite)
-
-
 if __name__ == '__main__':
-    result = run_all_tests()
+    result = run_module_tests(sys.modules[__name__])
     sys.exit(0 if result.wasSuccessful() else 1)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
     ktest
-    discover and run png tests
+    discover and run rlab tests
 """
 import sys
 from unittest import defaultTestLoader, TextTestRunner
@@ -19,8 +19,9 @@ def main(argv):
             > int
             > exit code (0 ok, 1 failures)
     """
+    options = argv
     suite = defaultTestLoader.discover('.')
-    if '-q' in argv:
+    if '-q' in options:
         runner = TextTestRunner()
     else:
         runner = RadicalTextTestRunner()

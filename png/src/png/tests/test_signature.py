@@ -2,18 +2,16 @@
 RADICAL PNG TEST: signature
 
 One test file per atomic (signature.py). GWT on every method.
-Reuses RadicalTestCase + short aliases from test_helpers.
 Pure stdlib only.
 """
-import os
 import sys
 
-import unittest
-from test_helpers import RadicalTestCase, RadicalTextTestRunner
 from png.signature import PNG_SIGNATURE
+from png.tests.png_test_case import PngTestCase
+from rlab.run_suite import run_module_tests
 
 
-class TestSignature(RadicalTestCase):
+class TestSignature(PngTestCase):
     def test_signature_constant(self):
         """Given the PNG magic constant
         When inspected
@@ -23,13 +21,6 @@ class TestSignature(RadicalTestCase):
         self.equa(len(PNG_SIGNATURE), 8)
 
 
-def run_all_tests(verbosity=2):
-    runner = RadicalTextTestRunner(verbosity=verbosity)
-    loader = unittest.TestLoader()
-    suite = loader.loadTestsFromModule(sys.modules[__name__])
-    return runner.run(suite)
-
-
 if __name__ == '__main__':
-    result = run_all_tests()
+    result = run_module_tests(sys.modules[__name__])
     sys.exit(0 if result.wasSuccessful() else 1)

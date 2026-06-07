@@ -2,20 +2,18 @@
 RADICAL PNG TEST: filters
 
 One test file per atomic (filters.py). GWT on every method.
-Includes filter+unfilter symmetry (cross atom proof, radical style).
-Reuses RadicalTestCase + short aliases + packers from test_helpers.
 Pure stdlib only.
 """
-import os
 import sys
 
-import unittest
-from test_helpers import RadicalTestCase, RadicalTextTestRunner, _pack_1bit
 from png.filters import apply_filter
 from png.unfilter import unfilter
+from png.pack_bits import pack_1bit
+from png.tests.png_test_case import PngTestCase
+from rlab.run_suite import run_module_tests
 
 
-class TestFilterUnfilter(RadicalTestCase):
+class TestFilterUnfilter(PngTestCase):
     def test_filter_unfilter_symmetry_ct0_various_ft(self):
         """Given 4x2 gray8 synthetic raw bytes (same as lib demos)
         When filter(..., filter_type=ft) for ft in 0..4 then unfilter the result
@@ -46,23 +44,14 @@ class TestFilterUnfilter(RadicalTestCase):
         When filter+unfilter round
         Then exact match (exercises bpp stride)
         """
-        # ct6 bd8 (w=2 h=1 to keep small; rowb=8)
         raw6 = bytes(list(range(8)))
         f6 = apply_filter(raw6, 2, 1, 6, 8, 4)
         self.equa(unfilter(f6, 2, 1, 6, 8), raw6)
-        # ct0 bd1 (w=8 rowb=1)
-        raw1 = _pack_1bit([1,0,1,0,1,0,1,0], 8)
+        raw1 = pack_1bit([1, 0, 1, 0, 1, 0, 1, 0], 8)
         f1 = apply_filter(raw1, 8, 1, 0, 1, 1)
         self.equa(unfilter(f1, 8, 1, 0, 1), raw1)
 
 
-def run_all_tests(verbosity=2):
-    runner = RadicalTextTestRunner(verbosity=verbosity)
-    loader = unittest.TestLoader()
-    suite = loader.loadTestsFromModule(sys.modules[__name__])
-    return runner.run(suite)
-
-
 if __name__ == '__main__':
-    result = run_all_tests()
+    result = run_module_tests(sys.modules[__name__])
     sys.exit(0 if result.wasSuccessful() else 1)
