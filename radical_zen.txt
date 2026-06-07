@@ -1,0 +1,60 @@
+// 'radical coding' is a work in progress, an ethos still condensing //
+// it shouldn't constrain implementations (probably) //
+// but it should be ruthless about constraining style and architecture //
+// this metaguidance may also change and evolve //
+
+The Radical Zen of Python
+=========================
+
+One atom, one file.
+One job, one function.
+Name the exports at the top; say no more than needed.
+
+Atoms before monoliths.
+Composition before inheritance.
+Orchestrate at the edges; keep the core dumb.
+
+Explicit beats clever.
+Plain loops beat magic.
+Bytes beat objects; dicts beat classes—unless the GUI demands otherwise.
+
+Read it top to bottom.
+If you cannot, split it.
+Cognitive burden is the enemy; simplicity is the weapon.
+
+`: ` for what goes in.
+`> ` for what comes out.
+`! ` for what must not happen.
+Say the contract; skip the sermon.
+
+Raise ValueError; name the sin.
+NotImplemented is honest refusal, not shame.
+Tradeoffs admitted in the docstring are tradeoffs kept.
+
+Pure stdlib only.
+No deps, no drama.
+What the language already gives you is enough.
+
+Every module is a demo.
+`if __name__ == '__main__'`: run the atom, prove the atom.
+The file teaches itself.
+
+Thin library, thick tests.
+Test-only helpers stay in tests.
+Pack what callers must pack; do not smuggle convenience into the surface.
+
+One test file per atom.
+Given, When, Then—every scenario speaks plain English.
+Short aliases in tests; long names in libraries.
+
+Symmetry proves correctness.
+Encode then decode; filter then unfilter.
+Roundtrip is the oracle.
+
+Radical is not reckless.
+Radical is Patton on complexity: decompose, march, accept the cost.
+Some generality deferred is complexity slain.
+
+Beautiful tests, boring code.
+Informative failures, quiet successes.
+When all pass: Radical!
