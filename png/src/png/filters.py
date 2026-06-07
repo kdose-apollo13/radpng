@@ -6,6 +6,12 @@ from png.row_bytes import get_row_bytes
 from png.bpp import get_bpp
 from png.paeth import paeth_predictor
 
+# Row geometry facility (bpp + row_bytes) provides the stride math used by
+# the filter transform. These two small atoms are tightly coupled and together
+# form the "pixel layout" support for the hot path (filters + unfilter).
+# They are kept as separate focused atoms because they are independently
+# meaningful and plausible future swap targets for optimization work.
+
 
 def apply_filter(raw, width, height, color_type, bit_depth, filter_type=0):
     """

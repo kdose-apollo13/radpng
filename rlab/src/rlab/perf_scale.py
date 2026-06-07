@@ -5,8 +5,28 @@
     Composes perf_timer. Pure stdlib. Thin surface.
 """
 from rlab.perf_timer import time_call, WALL_TIMER, make_repeated_timer
-from rlab.pixels import pixels_from_size as _pixels_from_size  # extracted single-job atom
-from rlab.name_of import name_of as _name_of  # extracted single-job atom
+
+# Re-absorbed narrow private helpers (previously over-extracted micro atoms).
+# They have no independent life outside this scaling facility.
+
+def _pixels_from_size(size):
+    """Best-effort pixel count for common (w, h) or int sizes (internal to scale)."""
+    if isinstance(size, (list, tuple)) and len(size) == 2:
+        try:
+            w, h = int(size[0]), int(size[1])
+            return w * h
+        except Exception:
+            return None
+    if isinstance(size, int):
+        return size
+    return None
+
+
+def _name_of(obj, fallback='subject'):
+    """Best-effort human name for a subject (str or __name__ or fallback). Internal."""
+    if isinstance(obj, str):
+        return obj
+    return getattr(obj, '__name__', fallback)
 
 
 def scale(

@@ -1,16 +1,18 @@
-// think -> PATTON-style war on complexity, tempered by observation //
+// think -> PATTON-style war on complexity, tempered by observation and the need for swappable facilities //
 
 // 'radical coding' is a work in progress, an ethos still condensing //
 // it shouldn't constrain implementations (probably) //
-// but it should be ruthless about constraining style and architecture //
+// but it should be ruthless about constraining style and architecture while
+// remaining pragmatic about the structures that make future variation easy.
 // this metaguidance may also change and evolve //
-// after building (and then purifying) a real system, we add lived nuance. //
+// after pushing extreme one-atom-per-file and then deliberately re-tuning the density,
+// we record the wiser balance.
 
 The Radical Zen of Python
 =========================
 
 One atom, one file.
-One job, one function.
+One job, one function (when that job forms a natural, independently meaningful unit).
 Name the exports at the top; say no more than needed.
 
 Atoms before monoliths.
@@ -23,7 +25,7 @@ Bytes beat objects; dicts beat classes—unless the GUI demands otherwise.
 
 Read it top to bottom.
 If you cannot, split it.
-(If splitting increases the burden of understanding the whole, name that cost.)
+(If splitting increases the burden of understanding a semantic facility or makes equal-signature replacement harder, name that cost and stop.)
 
 Cognitive burden is the enemy; simplicity is the weapon.
 
@@ -41,14 +43,14 @@ No deps, no drama.
 What the language already gives you is enough.
 
 Every module is a demo.
-`if __name__ == '__main__'`: run the atom, prove the atom.
-The file teaches itself.
+`if __name__ == '__main__'`: run the atom (or the small coherent facility), prove it.
+The file (or tight cluster) teaches itself.
 
 Thin library, thick tests.
 Test-only helpers stay in tests.
 Pack what callers must pack; do not smuggle convenience into the surface.
 
-One test file per atom.
+One test file per (major) atom or semantic facility.
 Given, When, Then—every scenario speaks plain English.
 Short aliases in tests; long names in libraries.
 
@@ -60,8 +62,19 @@ Radical is not reckless.
 Radical is Patton on complexity: decompose, march, accept the cost.
 Some generality deferred is complexity slain.
 
-When the rule feels ridiculous, try the split anyway.
-The observation of the resulting system is part of the practice.
+A healthy codebase exhibits a power-law distribution of module sizes.
+Most files are small and focused (true atoms or leaves).
+A modest number of "unified semantic facilities" are larger — they group things that are usually understood, varied, or demoed together (row geometry, the filter transform, the scaling/reporting experience, the PNG encoding pipeline, etc.).
+
+Bias strongly toward small when a clean single job exists.
+But design explicitly for the power law that serves:
+- semantic coherence (you can point to "the scaling facility" or "the PNG row transform" without opening a dozen files),
+- low combinatorial explosion (reasonable imports when using a common story),
+- easy understanding and demo at a useful abstraction level,
+- swappability for the optimization phase (equal-signature pieces or small coherent groups live close together and are convenient to replace via variants, contexts, or direct substitution while keeping high-level scenarios locked).
+
+When the rule feels ridiculous, try the split (or the consolidation) anyway.
+The observation of the resulting density and its effect on correctness, comprehension, and future variation is part of the practice.
 
 Beautiful tests, boring code.
 Informative failures, quiet successes.
@@ -69,8 +82,9 @@ When all pass: Radical!
 
 Observe what the rules create.
 Duplication in 2nd-order tests may be the honest price of isolation.
-Orchestrators grow; name the tension and keep them at the edges.
-This document is itself an atom. When it no longer reads top to bottom, rewrite it.
+Over-fragmentation raises the cost of variation and makes the flock harder to navigate.
+Under-fragmentation hides seams that should be swappable.
+Name both. Tune deliberately. Evolve the ethos as you learn what density actually serves the work.
 
-The style has successes (isolation, teachability, fearless replacement) and costs (file count, composition friction, the temptation to stop splitting).
-Name both. Evolve deliberately.
+This document is itself an atom (or small coherent set of principles).
+When it no longer reads top to bottom or no longer helps you ship correct, understandable, easily varied code, rewrite it.

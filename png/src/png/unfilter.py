@@ -6,6 +6,10 @@ from png.row_bytes import get_row_bytes
 from png.bpp import get_bpp
 from png.paeth import paeth_predictor
 
+# Row geometry facility (bpp + row_bytes) — see filters.py for notes.
+# The pair is the supporting "pixel layout / stride" math for the unfilter
+# hot path and is a natural unit for understanding or varying low-level geometry.
+
 
 def unfilter(filtered, width, height, color_type, bit_depth):
     """
