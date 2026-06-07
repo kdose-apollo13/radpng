@@ -1,0 +1,104 @@
+rlab
+  [TEST] test_basic_perf_sizes_ct0_and_ct6
+    Given: the make_synthetic_png helper (on-demand different file sizes)
+    When:  timing encode_png + decode_png on several (w,h) for ct0/6 bd8
+    Then:  all roundtrip + we log elapsed (basic smoke of size scaling)
+=== encode+decode ct0 (roundtrips asserted) ===
+
+subject: encdec_round
+variant:  baseline
+size            pixels  timer(per...   ratio
+(4, 2)               8     0.141       -
+(8, 4)              32     0.128    0.90x
+(16, 8)            128     0.170    1.33x
+(32, 16)           512     0.362    2.12x
+(64, 32)          2048     1.222    3.38x
+(128, 64)         8192     4.540    3.71x
+(256, 128)       32768    16.370    3.61x
+(512, 256)      131072    63.587    3.88x
+Complexity: O(n)  (exp~0.63, best=O(n))  empirical exponent ~0.63; 2x size ~1.55x time (rough)
+
+=== encode+decode ct6 (roundtrips asserted) ===
+
+subject: encdec_round
+variant:  baseline
+size            pixels  timer(per...   ratio
+(4, 2)               8     0.080       -
+(8, 4)              32     0.116    1.44x
+(16, 8)            128     0.294    2.55x
+(32, 16)           512     1.096    3.72x
+(64, 32)          2048     4.134    3.77x
+(128, 64)         8192    15.804    3.82x
+(256, 128)       32768    63.069    3.99x
+(512, 256)      131072   249.629    3.96x
+Complexity: O(n)  (exp~0.83, best=O(n))  empirical exponent ~0.83; 2x size ~1.78x time (rough)
+
+    [PASS]
+
+  [TEST] test_perf_filter_unfilter_sizes
+    Given: make_synthetic_image_data + apply/unfilter
+    When:  timing filter+unfilter round for a couple sizes / fts
+    Then:  recon matches + timings reported (exercises the hot path)
+=== filter+unfilter ct0 bd8 ft0 ===
+
+subject: filter_roundtrip
+variant:  baseline
+size            pixels  repeated(...   ratio
+(16, 8)            128     0.042       -
+(32, 16)           512     0.155    3.70x
+(64, 32)          2048     0.653    4.20x
+(128, 64)         8192     2.598    3.98x
+(256, 128)       32768    10.048    3.87x
+(512, 256)      131072    40.689    4.05x
+Complexity: O(n)  (exp~0.99, best=O(n))  empirical exponent ~0.99; 2x size ~1.99x time (rough)
+
+=== filter+unfilter ct0 bd8 ft4 ===
+
+subject: filter_roundtrip
+variant:  baseline
+size            pixels  repeated(...   ratio
+(16, 8)            128     0.200       -
+(32, 16)           512     0.747    3.74x
+(64, 32)          2048     3.068    4.11x
+(128, 64)         8192    12.833    4.18x
+(256, 128)       32768    49.076    3.82x
+(512, 256)      131072   191.513    3.90x
+Complexity: O(n)  (exp~0.99, best=O(n))  empirical exponent ~0.99; 2x size ~1.99x time (rough)
+
+=== filter+unfilter ct6 bd8 ft0 ===
+
+subject: filter_roundtrip
+variant:  baseline
+size            pixels  repeated(...   ratio
+(16, 8)            128     0.148       -
+(32, 16)           512     0.607    4.10x
+(64, 32)          2048     2.519    4.15x
+(128, 64)         8192    10.461    4.15x
+(256, 128)       32768    40.795    3.90x
+(512, 256)      131072   162.878    3.99x
+Complexity: O(n)  (exp~1.01, best=O(n))  empirical exponent ~1.01; 2x size ~2.01x time (rough)
+
+=== filter+unfilter ct6 bd8 ft4 ===
+
+subject: filter_roundtrip
+variant:  baseline
+size            pixels  repeated(...   ratio
+(16, 8)            128     0.739       -
+(32, 16)           512     3.074    4.16x
+(64, 32)          2048    12.376    4.03x
+(128, 64)         8192    48.621    3.93x
+(256, 128)       32768   195.035    4.01x
+(512, 256)      131072   776.095    3.98x
+Complexity: O(n)  (exp~1.00, best=O(n))  empirical exponent ~1.00; 2x size ~2.01x time (rough)
+
+    [PASS]
+
+
+
+Ran 2 tests in 4.484s
+
+OK
+Ran 2 tests. 0 failures.
+
+[Process exited 0]
+

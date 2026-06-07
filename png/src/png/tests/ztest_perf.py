@@ -41,7 +41,7 @@ class TestPerfEncodeDecode(PngTestCase):
                     return p2
 
                 # modest growth for encode/decode (zlib cost); powers give clear trend
-                sizes = [(2**k, 2**(k-1) or 1) for k in range(2, 7)]  # 4x2 ... 64x32
+                sizes = [(2**k, 2**(k-1) or 1) for k in range(2, 10)]  # 4x2 ... 64x32
                 res = scale(encdec_round, sizes, arg_builder=builder)
                 print(format_perf_report(res, title=f'encode+decode ct{ct} (roundtrips asserted)'))
 
@@ -51,7 +51,7 @@ class TestPerfEncodeDecode(PngTestCase):
         Then recon matches + timings reported (exercises the hot path)
         """
         # larger sizes for filter hot path (pure per-pixel, O(n) expected, visible trend)
-        base_sizes = [(2**k, 2**(k-1) or 1) for k in range(4, 9)]  # 16x8 ... 256x128
+        base_sizes = [(2**k, 2**(k-1) or 1) for k in range(4, 10)]  # 16x8 ... 256x128
         for ct, bd in ((0, 8), (6, 8)):
             for ft in (0, 4):
                 with self.subt(ct=ct, bd=bd, ft=ft):
