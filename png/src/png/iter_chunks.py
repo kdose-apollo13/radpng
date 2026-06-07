@@ -7,7 +7,7 @@ import struct
 import zlib
 from zlib import crc32
 
-from check_signature import check_signature
+from png.check_signature import check_signature
 
 
 def iter_chunks(f):

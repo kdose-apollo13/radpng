@@ -8,13 +8,13 @@
 import io
 import zlib
 
-from signature import PNG_SIGNATURE
-from row_bytes import get_row_bytes
-from plte import parse_plte
-from check_signature import check_signature
-from iter_chunks import iter_chunks
-from ihdr import parse_ihdr
-from unfilter import unfilter
+from png.signature import PNG_SIGNATURE
+from png.row_bytes import get_row_bytes
+from png.plte import parse_plte
+from png.check_signature import check_signature
+from png.iter_chunks import iter_chunks
+from png.ihdr import parse_ihdr
+from png.unfilter import unfilter
 
 
 def decode_png(src):

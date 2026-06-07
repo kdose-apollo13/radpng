@@ -3,7 +3,7 @@
     bytes per pixel (filter stride) for given ct/bd
 """
 
-from row_bytes import _samples_per_pixel
+from png.row_bytes import _samples_per_pixel
 
 
 def get_bpp(color_type, bit_depth):

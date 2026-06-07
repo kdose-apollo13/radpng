@@ -7,12 +7,12 @@
 """
 import zlib
 
-from signature import PNG_SIGNATURE
-from row_bytes import get_row_bytes
-from filters import apply_filter
-from make_chunk import make_chunk
-from ihdr import make_ihdr, parse_ihdr
-from plte import make_plte
+from png.signature import PNG_SIGNATURE
+from png.row_bytes import get_row_bytes
+from png.filters import apply_filter
+from png.make_chunk import make_chunk
+from png.ihdr import make_ihdr, parse_ihdr
+from png.plte import make_plte
 
 
 def encode_png(ihdr, data, palette=None, filter_type=0):

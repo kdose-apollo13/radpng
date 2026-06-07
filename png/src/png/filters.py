@@ -2,9 +2,9 @@
     apply_filter
     applies the 5 png filters to raw scanline bytes, producing filter-byte-prefixed rows for zlib
 """
-from row_bytes import get_row_bytes
-from bpp import get_bpp
-from paeth import paeth_predictor
+from png.row_bytes import get_row_bytes
+from png.bpp import get_bpp
+from png.paeth import paeth_predictor
 
 
 def apply_filter(raw, width, height, color_type, bit_depth, filter_type=0):

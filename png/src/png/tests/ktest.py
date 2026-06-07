@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from unittest import defaultTestLoader, TextTestRunner
-from klab.ututils import Runner
+from test_helpers import RadicalTextTestRunner as Runner
 
 import sys
 

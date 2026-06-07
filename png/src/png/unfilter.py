@@ -2,9 +2,9 @@
     unfilter
     reverses the 5 png filters on decompressed (filtered) scanline bytes
 """
-from row_bytes import get_row_bytes
-from bpp import get_bpp
-from paeth import paeth_predictor
+from png.row_bytes import get_row_bytes
+from png.bpp import get_bpp
+from png.paeth import paeth_predictor
 
 
 def unfilter(filtered, width, height, color_type, bit_depth):

@@ -7,6 +7,8 @@
     _pack_1bit
     _pack_2bit
     _pack_4bit
+    make_synthetic_image_data
+    make_synthetic_png
 
     Reusable radical test infrastructure extracted from test_radical_png.py:
     GWT docstring parser + beautify for informative output, custom runner/result
@@ -15,15 +17,28 @@
     etc instead of long assert* names), and the test-only low-bd packers (MSB-first,
     deliberately kept out of lib per design).
 
+    Also: on-demand synthetic PNG bytes + raw image data for convenient testing
+    of different file sizes / dimensions / ct / bd without fs or external assets.
+
     Follows radical style for its module (first lines = exportables; terse docs).
-    Pure stdlib (unittest, re). Intended for reuse in this or other radical tests.
+    Pure stdlib (unittest, re, time). Intended for reuse in this or other radical tests.
 """
+import os
+import sys
+# Radical flat layout bootstrap: make "from xxx import" of sibling lib atoms and
+# "from test_helpers import" work for direct "python tests/test_foo.py" runs as
+# well as ktest discover and python -m unittest from project root. Everything
+# limited to present dir.
+
 import unittest
 import re
 
 # Lib atoms needed only by the domain helpers in RadicalTestCase (test support)
-from encoder import encode_png, encode_rgba
-from decoder import decode_png, decode_rgba
+from png.encoder import encode_png, encode_rgba
+from png.decoder import decode_png, decode_rgba
+
+# row_bytes atoms for synth data length calc (test support only)
+from png.row_bytes import get_row_bytes, _samples_per_pixel
 
 
 # --- GWT + beautify helpers (parse typical test output / docs into sensible lines) ---
@@ -285,3 +300,122 @@ def _pack_4bit(values, width):
         else:
             data[byte_i] |= (v & 15)
     return bytes(data)
+
+
+# --- On-demand synthetic PNG streams / raw data (for different file sizes) ---
+# Pure, deterministic, no fs. Use for perf, scaling, matrix tests of varying
+# dimensions / color_type / bit_depth. Returns bytes usable directly as
+# "png stream" (decode_png accepts bytes) or wrapped in io.BytesIO if desired.
+
+def make_synthetic_image_data(width, height, color_type, bit_depth):
+    """Return correct-length unfiltered raw scanline bytes (deterministic pattern).
+
+    Handles all valid ct (0/2/3/4/6) + bd (1/2/4/8/16). For bd<8 uses the
+    test-only packers (MSB-first) so the bytes are exactly what encode_png
+    expects. Length == height * get_row_bytes(...).
+
+    Pure stdlib + local test support; no filesystem.
+    """
+    spp = _samples_per_pixel(color_type)
+    samples_per_row = width * spp
+    max_sample = (1 << bit_depth) - 1 if bit_depth <= 16 else 255
+
+    def sample_val(i):
+        # simple repeating ramp in legal range; different rows vary a bit
+        return (i * 37 + (i // samples_per_row) * 11) % (max_sample + 1)
+
+    out = bytearray()
+    for y in range(height):
+        vals = [sample_val(y * samples_per_row + x) for x in range(samples_per_row)]
+        if bit_depth == 1:
+            packed = _pack_1bit(vals, samples_per_row)
+        elif bit_depth == 2:
+            packed = _pack_2bit(vals, samples_per_row)
+        elif bit_depth == 4:
+            packed = _pack_4bit(vals, samples_per_row)
+        elif bit_depth == 8:
+            packed = bytes(v & 0xff for v in vals)
+        else:  # 16-bit: big-endian per sample (as PNG requires)
+            ba = bytearray()
+            for v in vals:
+                vv = v & 0xffff
+                ba.extend(((vv >> 8) & 0xff, vv & 0xff))
+            packed = bytes(ba)
+        out.extend(packed)
+
+    expected = height * get_row_bytes(width, color_type, bit_depth)
+    if len(out) != expected:
+        raise AssertionError(f'synth data len {len(out)} != expected {expected}')
+    return bytes(out)
+
+
+def make_synthetic_png(width=8, height=8, color_type=0, bit_depth=8,
+                       filter_type=0, palette=None):
+    """On-demand complete PNG bytes (sig + chunks) for convenient size/ct/bd/ft testing.
+
+    Builds valid ihdr + correct-length synth raw data (via make_synthetic_image_data)
+    then calls the real encode_png. Result can be passed directly to decode_png
+    (bytes accepted) or wrapped: decode_png(io.BytesIO(png)).
+
+    For ct=3: if palette is None a minimal sensible gray ramp palette is supplied
+    so callers can omit it for quick size sweeps.
+
+    Pure; no fs. Vary (width, height) to get different "file sizes".
+    """
+    ih = {
+        'width': width,
+        'height': height,
+        'bit_depth': bit_depth,
+        'color_type': color_type,
+        'compression_method': 0,
+        'filter_method': 0,
+        'interlace_method': 0,
+    }
+    data = make_synthetic_image_data(width, height, color_type, bit_depth)
+
+    if color_type == 3 and palette is None:
+        # auto minimal valid palette sized for the bd (max 256)
+        n = min(1 << bit_depth, 256) or 1
+        palette = [( (i * 255) // max(n-1, 1) ,) * 3 for i in range(n)]
+
+    return encode_png(ih, data, palette=palette, filter_type=filter_type)
+
+
+# --- Self-test of the helpers themselves (GWT style, radical) ---
+
+class TestHelpers(RadicalTestCase):
+    def test_parse_gwt_and_beautify_helpers(self):
+        """Given GWT docstrings and sample typical unittest text
+        When parse_gwt + beautify_unittest_output
+        Then return sensible 3-part lines or reformatted blocks
+        """
+        doc = """Given foo bar
+        When do thing
+        Then expect good
+        and more
+        """
+        g, w, t = parse_gwt(doc)
+        self.isin('foo bar', g)
+        self.isin('do thing', w)
+        self.isin('expect good', t)
+
+        raw_typ = 'test_foo (TestBar) ... ok\nTestHelpers.test_parse... ... FAIL\n'
+        nice = beautify_unittest_output(raw_typ)
+        self.isin('SCENARIO:', nice)
+        self.isin('Status:', nice)
+
+
+# --- Run entry points (the convenient way, per radical style) ---
+
+def run_all_tests(verbosity=2):
+    """Convenient function to run the radical test helpers self-tests."""
+    runner = RadicalTextTestRunner(verbosity=verbosity)
+    loader = unittest.TestLoader()
+    suite = loader.loadTestsFromModule(sys.modules[__name__])
+    return runner.run(suite)
+
+
+if __name__ == '__main__':
+    result = run_all_tests(verbosity=2)
+    sys.exit(0 if result.wasSuccessful() else 1)
+

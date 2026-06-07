@@ -2,7 +2,7 @@
     check_signature
     validates the 8-byte png signature
 """
-from signature import PNG_SIGNATURE
+from png.signature import PNG_SIGNATURE
 
 
 def check_signature(f):

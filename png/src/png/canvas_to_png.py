@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from encoder import encode_rgba
+from png.encoder import encode_rgba
 
 class PixelDrawApp:
     def __init__(self, root):
