@@ -55,8 +55,22 @@ def format_perf_report(results, title='perf report'):
         t0 = rows[0]['times']
         timer_labels = list(t0.keys())
         header = "size".ljust(14) + "pixels".rjust(8)
+
+        # mem (if present in any row for the group)
+        has_mem = any('mem' in r for r in rows)
+        mem_keys = []
+        if has_mem:
+            for r in rows:
+                if 'mem' in r:
+                    mem_keys = list(r['mem'].keys())[:3]  # first few
+                    break
+            for mk in mem_keys:
+                header += "  " + str(mk)[:9].rjust(9)
+
         for lab in timer_labels:
-            header += "  " + lab[:10].rjust(10)
+            # slightly longer truncation for long repeated(...) names
+            short = lab if len(lab) <= 12 else (lab[:9] + '...')
+            header += "  " + short.rjust(12)
         header += "  ratio".rjust(8)
         lines.append(header)
 
@@ -68,6 +82,19 @@ def format_perf_report(results, title='perf report'):
             pix = r.get('pixels')
             pixs = f"{pix}" if pix is not None else "-"
             line = sz.ljust(14) + pixs.rjust(8)
+
+            # mem values (if present)
+            if has_mem and mem_keys:
+                m = r.get('mem') or {}
+                for mk in mem_keys:
+                    mv = m.get(mk, 0)
+                    # show small numbers as-is, larger in 'k' units for readability
+                    if isinstance(mv, (int, float)) and mv >= 10000:
+                        val = f"{int(mv/1024)}k"
+                    else:
+                        val = str(int(mv)) if isinstance(mv, (int, float)) else str(mv)[:8]
+                    line += "  " + val.rjust(9)
+
             times = r['times']
             for lab in timer_labels:
                 dt = times.get(lab, 0.0)
@@ -94,6 +121,19 @@ def format_perf_report(results, title='perf report'):
         lines.append(
             f"Complexity: {g['guess']}  (exp~{g['exponent']:.2f}, best={g['best_model']})  {g['note']}"
         )
+
+        # Hotspots section (user can attach by putting "hotspots": stats_dict on a row
+        # or via the scale metadata that ends up in the row)
+        first = rows[0] if rows else {}
+        hot = first.get('hotspots')
+        if isinstance(hot, dict) and hot:
+            lines.append("Hotspots (top consumers):")
+            # show a few largest by time
+            sorted_hot = sorted(hot.items(), key=lambda kv: kv[1].get('time', 0), reverse=True)[:5]
+            for name, s in sorted_hot:
+                c = s.get('calls', 0)
+                t = s.get('time', 0.0)
+                lines.append(f"  {name}: calls={c} time={t*1000:.3f}ms")
 
     lines.append("")
     return "\n".join(lines)
