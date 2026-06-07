@@ -1,3 +1,6 @@
+
+// think -> PATTON-style war on complexity //
+
 // 'radical coding' is a work in progress, an ethos still condensing //
 // it shouldn't constrain implementations (probably) //
 // but it should be ruthless about constraining style and architecture //
