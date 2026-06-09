@@ -13,7 +13,7 @@ from png.make_chunk import make_chunk
 from png.ihdr import make_ihdr
 from png.encoder import encode_png
 from png.decoder import decode_png, decode_rgba
-from png.synth_png import make_synthetic_png
+from png.baseline import gen_rgba
 from png.tests.png_test_case import PngTestCase
 from rlab.run_suite import run_module_tests
 
@@ -112,30 +112,40 @@ class TestDecoder(PngTestCase):
 
 
 class TestIntegration(PngTestCase):
-    def test_canvas_output_png_round_and_reencode(self):
-        """Given the real canvas_output.png (ct6/8 400x300 produced by current code)
+    def test_roundtrip_generated_ct6_image(self):
+        """Given a ct6/8 image produced on-demand via baseline generator + encode_png
         When decode_png + re-encode its data (ft=0) + decode again
-        Then dims/ct match + data roundtrips (integration with real file)
+        Then dims/ct match + data roundtrips (integration via current encoder/decoder)
         """
-        d = decode_png('canvas_output.png')
-        self.equa(d['width'], 400)
-        self.equa(d['height'], 300)
+        w, h = 64, 32
+        data = gen_rgba(w, h, 8)
+        ihdr = {
+            'width': w, 'height': h, 'bit_depth': 8, 'color_type': 6,
+            'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
+        }
+        png = encode_png(ihdr, bytes(data), filter_type=0)
+        d = decode_png(png)
+        self.equa(d['width'], w)
+        self.equa(d['height'], h)
         self.equa(d['color_type'], 6)
         self.equa(d['bit_depth'], 8)
         self.equa(d['palette'], None)
-        ih = {k: d[k] for k in ('width', 'height', 'bit_depth', 'color_type',
-                                'compression_method', 'filter_method', 'interlace_method')}
-        png2 = encode_png(ih, d['data'], filter_type=0)
+        png2 = encode_png(ihdr, d['data'], filter_type=0)
         d2 = decode_png(png2)
         self.equa(d2['data'], d['data'])
 
-    def test_synth_sizes_via_decode_png_bytes_and_stream(self):
-        """Given on-demand synth pngs of varied sizes (via helpers)
+    def test_sizes_via_decode_png_bytes_and_stream(self):
+        """Given on-demand PNGs produced via baseline generator + encode_png
         When decode_png(bytes) and via BytesIO
         Then both succeed and produce matching dims/data
         """
         for w, h in [(4, 2), (32, 16)]:
-            png = make_synthetic_png(w, h, 6, 8)
+            data = gen_rgba(w, h, 8)
+            ihdr = {
+                'width': w, 'height': h, 'bit_depth': 8, 'color_type': 6,
+                'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
+            }
+            png = encode_png(ihdr, bytes(data), filter_type=0)
             d_bytes = decode_png(png)
             self.equa(d_bytes['width'], w)
             self.equa(len(d_bytes['data']), w * h * 4)

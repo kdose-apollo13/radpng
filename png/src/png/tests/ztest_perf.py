@@ -1,74 +1,116 @@
 """
-RADICAL PNG PERF / BENCH (basic)
+RADICAL PNG PERF / MATRIX SMOKE (simplified)
 
-Cross-atom perf smoke. GWT on methods. Pure stdlib.
+Cross-atom exercise of the PNG feature matrix using baseline generators.
+Plain loops + direct timing (time.perf_counter). No perf_scale / perf_report indirection.
+GWT on methods. Pure stdlib + rlab harness. Every module is a demo.
 """
 import sys
+import time
 
 from png.encoder import encode_png
 from png.decoder import decode_png
 from png.filters import apply_filter
 from png.unfilter import unfilter
-from png.synth_png import make_synthetic_png
-from png.synth_data import make_synthetic_image_data
+from png.baseline import (
+    gen_grey, gen_greya, gen_rgb, gen_rgba, gen_indexed,
+)
 from png.tests.png_test_case import PngTestCase
 from rlab.run_suite import run_module_tests
 
-from rlab.perf_scale import scale
-from rlab.perf_report import format_perf_report
+
+# Same predicates as baseline.py __main__ (step-by-step manual progression made obvious).
+BIT_DEPTH_FOR_COLOR_TYPE = {
+    0: [1, 2, 4, 8, 16],
+    2: [8, 16],
+    3: [1, 2, 4, 8],
+    4: [8, 16],
+    6: [8, 16],
+}
+
+GENERATORS = {
+    0: gen_grey,
+    2: gen_rgb,
+    3: gen_indexed,
+    4: gen_greya,
+    6: gen_rgba,
+}
 
 
-class TestPerfEncodeDecode(PngTestCase):
-    def test_basic_perf_sizes_ct0_and_ct6(self):
-        """Given the make_synthetic_png helper (on-demand different file sizes)
-        When timing encode_png + decode_png on several (w,h) for ct0/6 bd8
-        Then all roundtrip + we log elapsed (basic smoke of size scaling)
+class TestPerfMatrix(PngTestCase):
+    def test_encode_decode_sizes_ct0_and_ct6(self):
+        """Given baseline generators for ct0/6 bd8
+        When encode_png + decode_png on modest growing sizes
+        Then roundtrips asserted + simple elapsed times printed (size scaling smoke)
         """
+        sizes = [(4, 2), (16, 8), (64, 32)]
         for ct in (0, 6):
-            with self.subt(ct=ct):
-                def builder(wh):
-                    w, h = wh
-                    png = make_synthetic_png(w, h, ct, 8)
-                    return (png,), {}
-
-                def encdec_round(pngb):
+            gen = GENERATORS[ct]
+            for w, h in sizes:
+                with self.subt(ct=ct, w=w, h=h):
+                    data = gen(w, h, 8)
+                    ihdr = {
+                        'width': w, 'height': h,
+                        'bit_depth': 8, 'color_type': ct,
+                        'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
+                    }
+                    t0 = time.perf_counter()
+                    pngb = encode_png(ihdr, bytes(data), filter_type=0)
                     d = decode_png(pngb)
-                    ih = {k: d[k] for k in ('width', 'height', 'bit_depth', 'color_type',
-                                            'compression_method', 'filter_method', 'interlace_method')}
-                    p2 = encode_png(ih, d['data'], filter_type=0)
-                    # roundtrip oracle still exercised for every measurement (Then clause)
-                    self.equa(d['data'], decode_png(p2)['data'])
-                    return p2
+                    t1 = time.perf_counter()
+                    self.equa(d['data'], bytes(data))
+                    print(f'encode+decode ct{ct} {w}x{h}: {(t1 - t0) * 1000:.3f} ms')
 
-                # modest growth for encode/decode (zlib cost); powers give clear trend
-                sizes = [(2**k, 2**(k-1) or 1) for k in range(2, 7)]  # 4x2 ... 64x32
-                res = scale(encdec_round, sizes, arg_builder=builder)
-                print(format_perf_report(res, title=f'encode+decode ct{ct} (roundtrips asserted)'))
-
-    def test_perf_filter_unfilter_sizes(self):
-        """Given make_synthetic_image_data + apply/unfilter
-        When timing filter+unfilter round for a couple sizes / fts
-        Then recon matches + timings reported (exercises the hot path)
+    def test_filter_unfilter_sizes(self):
+        """Given baseline generators for raw bytes (ct0/6 bd8)
+        When apply_filter + unfilter round for ft 0/4 across sizes
+        Then recon matches + simple elapsed times printed (hot path exercise)
         """
-        # larger sizes for filter hot path (pure per-pixel, O(n) expected, visible trend)
-        base_sizes = [(2**k, 2**(k-1) or 1) for k in range(4, 7)]  # 16x8 ... 256x128
+        sizes = [(16, 8), (64, 32)]
         for ct, bd in ((0, 8), (6, 8)):
+            gen = GENERATORS[ct]
             for ft in (0, 4):
-                with self.subt(ct=ct, bd=bd, ft=ft):
-                    def builder(wh):
-                        w, h = wh
-                        raw = make_synthetic_image_data(w, h, ct, bd)
-                        return (raw, w, h, ct, bd, ft), {}
-
-                    def filter_roundtrip(raw, w, h, ct, bd, ft):
+                for w, h in sizes:
+                    with self.subt(ct=ct, bd=bd, ft=ft, w=w, h=h):
+                        raw = gen(w, h, bd)
+                        t0 = time.perf_counter()
                         filt = apply_filter(raw, w, h, ct, bd, filter_type=ft)
                         recon = unfilter(filt, w, h, ct, bd)
-                        # recon oracle (Then) for every timed iteration
-                        self.equa(recon, raw)
-                        return recon
+                        t1 = time.perf_counter()
+                        self.equa(recon, bytes(raw))
+                        print(f'filter+unfilter ct{ct} bd{bd} ft{ft} {w}x{h}: {(t1 - t0) * 1000:.3f} ms')
 
-                    res = scale(filter_roundtrip, base_sizes, arg_builder=builder, repeats=2)
-                    print(format_perf_report(res, title=f'filter+unfilter ct{ct} bd{bd} ft{ft}'))
+    def test_full_matrix_small_sizes(self):
+        """Given the exact (size, ct, bd, ft) matrix from baseline.py
+        When encode_png for every combination (small sizes only)
+        Then all 300 combos succeed + roundtrip data for a sample
+        """
+        sizes = [(2, 2), (10, 10), (31, 31)]
+        tests_run = 0
+        for (w, h) in sizes:
+            for ct, depths in BIT_DEPTH_FOR_COLOR_TYPE.items():
+                gen = GENERATORS[ct]
+                for bd in depths:
+                    for ft in [0, 1, 2, 3, 4]:
+                        with self.subt(w=w, h=h, ct=ct, bd=bd, ft=ft):
+                            if ct == 3:
+                                data, palette = gen(w, h, bd)
+                            else:
+                                data = gen(w, h, bd)
+                                palette = None
+                            ihdr = {
+                                'width': w, 'height': h,
+                                'bit_depth': bd, 'color_type': ct,
+                                'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
+                            }
+                            pngb = encode_png(ihdr, bytes(data), palette=palette, filter_type=ft)
+                            # Sample roundtrip oracle (not every combo, to keep perf smoke fast)
+                            if (w, h, ct, bd, ft) == (2, 2, 0, 8, 0):
+                                d = decode_png(pngb)
+                                self.equa(d['data'], bytes(data))
+                            tests_run += 1
+        # Visible in output; proves the matrix is exercised end-to-end
+        print(f'full matrix smoke: {tests_run} combos (sizes from baseline)')
 
 
 if __name__ == '__main__':

@@ -13,7 +13,7 @@ from png.ihdr import make_ihdr
 from png.encoder import encode_png, encode_rgba
 from png.decoder import decode_png, decode_rgba
 from png.pack_bits import pack_1bit, pack_2bit, pack_4bit
-# from png.synth_png import make_synthetic_png
+from png.baseline import gen_grey, gen_rgb, gen_rgba, gen_indexed
 from png.tests.png_test_case import PngTestCase
 from rlab.run_suite import run_module_tests
 
@@ -102,21 +102,34 @@ class TestChunkEdges(PngTestCase):
         self.equa(dec['data'], raw)
         self.equa(dec['color_type'], 0)
 
-    def test_on_demand_synth_sizes_roundtrip(self):
-        """Given the make_synthetic_* helpers (different file sizes)
-        When encode/decode roundtrip via the helpers
+    def test_sizes_roundtrip_via_baseline_generators(self):
+        """Given baseline generators for varied (w,h,ct,bd,ft)
+        When encode_png + decode_png + re-encode roundtrip
         Then exact data match for several sizes (proves size scaling works)
         """
         for w, h in [(1, 1), (8, 4), (16, 8)]:
             for ct, bd, ft in [(0, 8, 0), (6, 8, 4), (2, 8, 2)]:
                 with self.subt(w=w, h=h, ct=ct, bd=bd, ft=ft):
-                    png = make_synthetic_png(w, h, ct, bd, filter_type=ft)
+                    if ct == 3:
+                        data, palette = gen_indexed(w, h, bd)  # not exercised in this loop
+                    elif ct == 0:
+                        data = gen_grey(w, h, bd)
+                        palette = None
+                    elif ct == 2:
+                        data = gen_rgb(w, h, bd)
+                        palette = None
+                    else:
+                        data = gen_rgba(w, h, bd)
+                        palette = None
+                    ihdr = {
+                        'width': w, 'height': h, 'bit_depth': bd, 'color_type': ct,
+                        'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
+                    }
+                    png = encode_png(ihdr, bytes(data), palette=palette, filter_type=ft)
                     d = decode_png(png)
                     self.equa(d['width'], w)
                     self.equa(d['height'], h)
-                    ih = {k: d[k] for k in ('width', 'height', 'bit_depth', 'color_type',
-                                            'compression_method', 'filter_method', 'interlace_method')}
-                    p2 = encode_png(ih, d['data'], filter_type=ft)
+                    p2 = encode_png(ihdr, d['data'], palette=palette, filter_type=ft)
                     self.equa(decode_png(p2)['data'], d['data'])
 
 
