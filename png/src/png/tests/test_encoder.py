@@ -13,7 +13,7 @@ from png.ihdr import make_ihdr
 from png.encoder import encode_png, encode_rgba
 from png.decoder import decode_png, decode_rgba
 from png.pack_bits import pack_1bit, pack_2bit, pack_4bit
-from png.synth_png import make_synthetic_png
+# from png.synth_png import make_synthetic_png
 from png.tests.png_test_case import PngTestCase
 from rlab.run_suite import run_module_tests
 
