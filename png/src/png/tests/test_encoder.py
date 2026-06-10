@@ -33,7 +33,7 @@ class TestEncoder(RadicalTestCase):
     def test_encode_png_errors(self):
         """Given bad inputs to encode_png
         When called
-        Then appropriate ValueError or NotImplemented (interlace)
+        Then appropriate ValueError (length, missing palette, etc.)
         """
         ih = {'width': 2, 'height': 1, 'bit_depth': 8, 'color_type': 0,
               'compression_method': 0, 'filter_method': 0, 'interlace_method': 0}
@@ -42,9 +42,7 @@ class TestEncoder(RadicalTestCase):
         ih3 = dict(ih, color_type=3)
         with self.rais(ValueError):
             encode_png(ih3, b'\0\0')
-        ih_i = dict(ih, interlace_method=1)
-        with self.rais(NotImplementedError):
-            encode_png(ih_i, b'\0\0')
+        # interlace=1 is now supported (see test_interlace)
 
 
 class TestChunkEdges(RadicalTestCase):

@@ -29,7 +29,6 @@ def decode_png(src):
 
         raises
             ! ValueError for bad signature / crc / missing chunks / zlib fail / ct=3 without plte
-            ! NotImplementedError for adam7 interlace
     """
     if isinstance(src, (bytes, bytearray)):
         f = io.BytesIO(src)
@@ -62,11 +61,6 @@ def decode_png(src):
         if not idat_list:
             raise ValueError('missing IDAT chunk(s)')
 
-        if ihdr['interlace_method'] != 0:
-            raise NotImplementedError(
-                'interlace_method=1 (Adam7) is not supported in this basic decoder'
-            )
-
         if ihdr['color_type'] == 3 and plte is None:
             raise ValueError('PLTE chunk is required for color_type 3 (indexed)')
 
@@ -76,13 +70,24 @@ def decode_png(src):
         except Exception as e:
             raise ValueError(f'zlib decompression failed: {e}') from e
 
-        raw = unfilter(
-            filtered,
-            ihdr['width'],
-            ihdr['height'],
-            ihdr['color_type'],
-            ihdr['bit_depth'],
-        )
+        interlace = ihdr['interlace_method']
+        if interlace == 0:
+            raw = unfilter(
+                filtered,
+                ihdr['width'],
+                ihdr['height'],
+                ihdr['color_type'],
+                ihdr['bit_depth'],
+            )
+        else:
+            from png.interlace import extract_from_adam7_filtered
+            raw = extract_from_adam7_filtered(
+                filtered,
+                ihdr['width'],
+                ihdr['height'],
+                ihdr['color_type'],
+                ihdr['bit_depth'],
+            )
 
         result = dict(ihdr)
         result['data'] = bytes(raw)

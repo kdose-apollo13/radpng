@@ -42,7 +42,6 @@ def encode_png(ihdr, data, palette=None, filter_type=0):
 
         raises
             ! ValueError for len mismatch, missing plte for ct3, bad ihdr (via parse)
-            ! NotImplementedError for interlace=1
     """
     ihdr_data = make_ihdr(ihdr)
     parsed = parse_ihdr(ihdr_data)  # validates w/h>0, ct/bd matrix, methods etc
@@ -51,11 +50,7 @@ def encode_png(ihdr, data, palette=None, filter_type=0):
     h = parsed['height']
     bd = parsed['bit_depth']
     ct = parsed['color_type']
-
-    if parsed['interlace_method'] != 0:
-        raise NotImplementedError(
-            'interlace_method=1 (Adam7) is not supported in this basic encoder'
-        )
+    interlace = parsed['interlace_method']
 
     if ct == 3 and palette is None:
         raise ValueError('palette required for color_type 3 (indexed)')
@@ -64,7 +59,11 @@ def encode_png(ihdr, data, palette=None, filter_type=0):
     if len(data) != h * rowb:
         raise ValueError(f'data length {len(data)} != expected {h * rowb} for {w}x{h}')
 
-    filt = apply_filter(data, w, h, ct, bd, filter_type=filter_type)
+    if interlace == 0:
+        filt = apply_filter(data, w, h, ct, bd, filter_type=filter_type)
+    else:
+        from png.interlace import build_adam7_filtered
+        filt = build_adam7_filtered(data, w, h, ct, bd, filter_type=filter_type)
     comp = zlib.compress(filt)
 
     out = bytearray(PNG_SIGNATURE)
