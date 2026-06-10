@@ -1,4 +1,4 @@
-from png.baselines.baseline import pack_row
+from png.baselines.pack import pack_row
 
 
 def gen_greya(w, h, bd):

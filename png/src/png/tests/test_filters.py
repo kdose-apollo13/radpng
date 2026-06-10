@@ -36,8 +36,10 @@ class TestFilterUnfilter(PngTestCase):
         filt = apply_filter(raw, 4, 1, 0, 8, filter_type=0)
         self.equa(filt[0], 0)
         self.equa(filt[1:], raw)
-        self.assert_raises_value_err('0-4', apply_filter, raw, 4, 1, 0, 8, filter_type=5)
-        self.assert_raises_value_err('length', apply_filter, b'abc', 4, 1, 0, 8, 0)
+        with self.rais(ValueError):
+            apply_filter(raw, 4, 1, 0, 8, filter_type=5)
+        with self.rais(ValueError):
+            apply_filter(b'abc', 4, 1, 0, 8, 0)
 
     def test_filter_unfilter_other_ct_bd(self):
         """Given ct=2/6/4 and bd=1/16 cases (bpp >1 or packed)

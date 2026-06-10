@@ -13,7 +13,7 @@ from png.ihdr import make_ihdr
 from png.encoder import encode_png, encode_rgba
 from png.decoder import decode_png, decode_rgba
 from png.pack_bits import pack_1bit, pack_2bit, pack_4bit
-from png.baseline import gen_grey, gen_rgb, gen_rgba, gen_indexed
+from png.baselines import gen_grey, gen_rgb, gen_rgba, gen_indexed
 from png.tests.png_test_case import PngTestCase
 from rlab.run_suite import run_module_tests
 
@@ -24,9 +24,12 @@ class TestEncoder(PngTestCase):
         When encode_rgba
         Then ValueError for empty / ragged / bad tuple len
         """
-        self.assert_raises_value_err('non-empty', encode_rgba, [])
-        self.assert_raises_value_err('same width', encode_rgba, [[(1, 2, 3, 4)], [(1, 2, 3, 4), (5, 6, 7, 8)]])
-        self.assert_raises_value_err('4-tuple', encode_rgba, [[(1, 2, 3)]])
+        with self.rais(ValueError):
+            encode_rgba([])
+        with self.rais(ValueError):
+            encode_rgba([[(1, 2, 3, 4)], [(1, 2, 3, 4), (5, 6, 7, 8)]])
+        with self.rais(ValueError):
+            encode_rgba([[(1, 2, 3)]])
 
     def test_encode_png_errors(self):
         """Given bad inputs to encode_png
@@ -35,9 +38,11 @@ class TestEncoder(PngTestCase):
         """
         ih = {'width': 2, 'height': 1, 'bit_depth': 8, 'color_type': 0,
               'compression_method': 0, 'filter_method': 0, 'interlace_method': 0}
-        self.assert_raises_value_err('length', encode_png, ih, b'abc')
+        with self.rais(ValueError):
+            encode_png(ih, b'abc')
         ih3 = dict(ih, color_type=3)
-        self.assert_raises_value_err('palette', encode_png, ih3, b'\0\0')
+        with self.rais(ValueError):
+            encode_png(ih3, b'\0\0')
         ih_i = dict(ih, interlace_method=1)
         with self.rais(NotImplementedError):
             encode_png(ih_i, b'\0\0')

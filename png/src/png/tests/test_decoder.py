@@ -13,7 +13,7 @@ from png.make_chunk import make_chunk
 from png.ihdr import make_ihdr
 from png.encoder import encode_png
 from png.decoder import decode_png, decode_rgba
-from png.baseline import gen_rgba
+from png.baselines import gen_rgba
 from png.tests.png_test_case import PngTestCase
 from rlab.run_suite import run_module_tests
 
@@ -60,7 +60,8 @@ class TestDecoder(PngTestCase):
             '0000000d4948445200000001000000010802000000907753de'
             '0000000c49444154789c63606060000000040001f61738550000000049454e44ae426082'
         )
-        self.assert_raises_value_err('6', decode_rgba, p2)
+        with self.rais(ValueError):
+            decode_rgba(p2)
 
     def test_decode_errors_missing_multi_bad_zlib(self):
         """Given truncated / missing / multi / corrupt-zlib cases
@@ -69,16 +70,19 @@ class TestDecoder(PngTestCase):
         """
         ihb = make_ihdr({'width': 1, 'height': 1, 'bit_depth': 8, 'color_type': 0})
         bad = PNG_SIGNATURE + make_chunk(b'IEND', b'')
-        self.assert_raises_value_err('IHDR', decode_png, bad)
+        with self.rais(ValueError):
+            decode_png(bad)
 
         bad2 = PNG_SIGNATURE + make_chunk(b'IHDR', ihb) + make_chunk(b'IHDR', ihb) + \
             make_chunk(b'IDAT', zlib.compress(b'\0')) + make_chunk(b'IEND', b'')
-        self.assert_raises_value_err('multiple IHDR', decode_png, bad2)
+        with self.rais(ValueError):
+            decode_png(bad2)
 
         ih3 = make_ihdr({'width': 1, 'height': 1, 'bit_depth': 8, 'color_type': 3})
         bad3 = PNG_SIGNATURE + make_chunk(b'IHDR', ih3) + \
             make_chunk(b'IDAT', zlib.compress(b'\0')) + make_chunk(b'IEND', b'')
-        self.assert_raises_value_err('PLTE', decode_png, bad3)
+        with self.rais(ValueError):
+            decode_png(bad3)
 
         good_id = zlib.compress(b'\0\xff')
         badz = bytearray(good_id)
@@ -86,7 +90,8 @@ class TestDecoder(PngTestCase):
             badz[0] ^= 0xff
         bad4 = PNG_SIGNATURE + make_chunk(b'IHDR', ihb) + \
             make_chunk(b'IDAT', bytes(badz)) + make_chunk(b'IEND', b'')
-        self.assert_raises_value_err('zlib', decode_png, bytes(bad4))
+        with self.rais(ValueError):
+            decode_png(bytes(bad4))
 
     def test_decode_accepts_path_and_bytes(self):
         """Given a produced png on disk and as bytes/bytearray

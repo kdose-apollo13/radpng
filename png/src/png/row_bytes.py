@@ -5,7 +5,7 @@
 
 def _samples_per_pixel(color_type):
     """Private helper: samples per pixel for the given color_type (dedups logic
-    used by row_bytes + bpp; see SUGGESTIONS.md).
+    used by row_bytes + bpp).
     """
     if color_type in (0, 3):      # grayscale or indexed
         return 1

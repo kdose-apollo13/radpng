@@ -1,6 +1,6 @@
 """
     RadicalTestCase
-    unittest.TestCase with short aliases and assert_raises_value_err
+    unittest.TestCase with short aliases (self.rais, self.equa, etc.)
 """
 import unittest
 
@@ -14,6 +14,9 @@ class RadicalTestCase(unittest.TestCase):
             self.subt = subTest
             self.nota = assertFalse
             self.isin = assertIn
+
+        Use self.rais(Exc) uniformly for exception tests (any Exc, including ValueError).
+        Capture ctx when you need to inspect the message.
     """
 
     def __init__(self, methodName='runTest'):
@@ -25,22 +28,6 @@ class RadicalTestCase(unittest.TestCase):
         self.nota = self.assertFalse
         self.isin = self.assertIn
 
-    def assert_raises_value_err(self, msg_substr, func, *a, **k):
-        """
-            msg_substr
-                : str
-                : substring expected in ValueError message (case-insensitive)
-            func, *a, **k
-                : callable and args
-
-        raises
-            ! AssertionError if no ValueError or message mismatch
-        """
-        with self.rais(ValueError) as ctx:
-            func(*a, **k)
-        self.isin(msg_substr.lower(), str(ctx.exception).lower())
-
-
 if __name__ == '__main__':
     print('=== RadicalTestCase demo ===')
     t = RadicalTestCase()
@@ -49,5 +36,9 @@ if __name__ == '__main__':
         raise ValueError('bad PNG signature')
 
     t.equa(1 + 1, 2)
-    t.assert_raises_value_err('signature', _raise_sig)
+    # Uniform style: self.rais(Exc) for any exception type (ValueError included).
+    # When you care about the message, capture the context and use isin.
+    with t.rais(ValueError) as ctx:
+        _raise_sig()
+    t.isin('signature', str(ctx.exception).lower())
     print('RadicalTestCase ok')

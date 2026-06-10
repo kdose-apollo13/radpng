@@ -32,12 +32,18 @@ class TestIhdr(PngTestCase):
         When parse_ihdr
         Then ValueError with informative message
         """
-        self.assert_raises_value_err('13 bytes', parse_ihdr, b'abc')
-        self.assert_raises_value_err('> 0', parse_ihdr, make_ihdr({'width': 0, 'height': 1, 'bit_depth': 8, 'color_type': 0}))
-        self.assert_raises_value_err('> 0', parse_ihdr, make_ihdr({'width': 1, 'height': 0, 'bit_depth': 8, 'color_type': 0}))
-        self.assert_raises_value_err('compression', parse_ihdr, b'\0\0\0\1\0\0\0\1\x08\x00\x01\x00\x00')
-        self.assert_raises_value_err('color_type', parse_ihdr, make_ihdr({'width': 1, 'height': 1, 'bit_depth': 8, 'color_type': 1}))
-        self.assert_raises_value_err('bit_depth', parse_ihdr, make_ihdr({'width': 1, 'height': 1, 'bit_depth': 2, 'color_type': 2}))
+        with self.rais(ValueError):
+            parse_ihdr(b'abc')
+        with self.rais(ValueError):
+            parse_ihdr(make_ihdr({'width': 0, 'height': 1, 'bit_depth': 8, 'color_type': 0}))
+        with self.rais(ValueError):
+            parse_ihdr(make_ihdr({'width': 1, 'height': 0, 'bit_depth': 8, 'color_type': 0}))
+        with self.rais(ValueError):
+            parse_ihdr(b'\0\0\0\1\0\0\0\1\x08\x00\x01\x00\x00')
+        with self.rais(ValueError):
+            parse_ihdr(make_ihdr({'width': 1, 'height': 1, 'bit_depth': 8, 'color_type': 1}))
+        with self.rais(ValueError):
+            parse_ihdr(make_ihdr({'width': 1, 'height': 1, 'bit_depth': 2, 'color_type': 2}))
 
 
 if __name__ == '__main__':

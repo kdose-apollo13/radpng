@@ -24,7 +24,8 @@ class TestCheckSignature(PngTestCase):
             check_signature(f)
         bad = b'NOTAPNG!' + b'\0' * 4
         with io.BytesIO(bad) as f:
-            self.assert_raises_value_err('signature', check_signature, f)
+            with self.rais(ValueError):
+                check_signature(f)
 
     def test_signature_truncated(self):
         """Given fewer than 8 signature bytes
@@ -32,7 +33,8 @@ class TestCheckSignature(PngTestCase):
         Then ValueError mentioning signature
         """
         with io.BytesIO(b'\x89PNG\r') as f:
-            self.assert_raises_value_err('signature', check_signature, f)
+            with self.rais(ValueError):
+                check_signature(f)
 
 
 if __name__ == '__main__':

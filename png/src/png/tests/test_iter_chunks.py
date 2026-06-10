@@ -56,10 +56,9 @@ class TestIterChunks(PngTestCase):
         with io.BytesIO(partial) as f:
             check_signature(f)
 
-            def consume():
+            with self.rais(ValueError) as ctx:
                 list(iter_chunks(f))
-
-            self.assert_raises_value_err('chunk type', consume)
+            self.isin('chunk type', str(ctx.exception).lower())
 
 
 if __name__ == '__main__':

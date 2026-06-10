@@ -12,7 +12,7 @@ from png.encoder import encode_png
 from png.decoder import decode_png
 from png.filters import apply_filter
 from png.unfilter import unfilter
-from png.baseline import (
+from png.baselines import (
     gen_grey, gen_greya, gen_rgb, gen_rgba, gen_indexed,
 )
 from png.tests.png_test_case import PngTestCase

@@ -20,26 +20,6 @@ class TestRadicalTestCase(RadicalTestCase):
         self.equa(2, 1 + 1)
         self.isin('a', 'abc')
 
-    def test_assert_raises_value_err_match(self):
-        """Given a callable that raises ValueError
-        When assert_raises_value_err with matching substring
-        Then passes silently
-        """
-        def bad():
-            raise ValueError('bad PNG signature: got xx')
-        self.assert_raises_value_err('signature', bad)
-
-    def test_assert_raises_value_err_mismatch(self):
-        """Given a callable that raises ValueError with wrong message
-        When assert_raises_value_err expects different substring
-        Then AssertionError
-        """
-        def bad():
-            raise ValueError('other problem')
-        with self.rais(AssertionError):
-            self.assert_raises_value_err('signature', bad)
-
-
 if __name__ == '__main__':
     result = run_module_tests(sys.modules[__name__])
     sys.exit(0 if result.wasSuccessful() else 1)

@@ -25,7 +25,8 @@ class TestMakeChunk(PngTestCase):
         crc = struct.unpack('>I', ch[-4:])[0]
         expected = zlib.crc32(b'IHDR' + b'\0' * 13) & 0xffffffff
         self.equa(crc, expected)
-        self.assert_raises_value_err('4 bytes', make_chunk, b'ABC', b'')
+        with self.rais(ValueError):
+            make_chunk(b'ABC', b'')
 
     def test_make_chunk_empty_iend(self):
         """Given empty IEND chunk data

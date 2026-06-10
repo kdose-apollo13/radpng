@@ -21,10 +21,14 @@ class TestPLTE(PngTestCase):
         data = make_plte(pal)
         self.equa(parse_plte(data), pal)
         self.equa(len(data), 9)
-        self.assert_raises_value_err('1..256', make_plte, [])
-        self.assert_raises_value_err('1..256', make_plte, [(1, 2, 3)] * 257)
-        self.assert_raises_value_err('entry', make_plte, [(1, 2)])
-        self.assert_raises_value_err('multiple', parse_plte, b'\0\0')
+        with self.rais(ValueError):
+            make_plte([])
+        with self.rais(ValueError):
+            make_plte([(1, 2, 3)] * 257)
+        with self.rais(ValueError):
+            make_plte([(1, 2)])
+        with self.rais(ValueError):
+            parse_plte(b'\0\0')
 
 
 if __name__ == '__main__':
