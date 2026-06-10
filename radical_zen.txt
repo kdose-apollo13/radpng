@@ -1,3 +1,8 @@
+// POST-APOCALYPTIC PYTHON, no libs, no excess
+// code promotes education, of subject matter and repo
+// standalone atomic files, descriptive, demonstrative, digestible
+
+
 // think -> PATTON-style war on complexity, tempered by observation and the need for swappable facilities //
 
 // 'radical coding' is a work in progress, an ethos still condensing //
