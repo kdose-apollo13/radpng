@@ -3,18 +3,19 @@
 // standalone atomic files, descriptive, demonstrative, digestible
 
 
-// think -> PATTON-style war on complexity, tempered by observation and the need for swappable facilities //
+// think -> PATTON-style war on complexity
+// both software complexity and info/knowledge availability in general
 
-// 'radical coding' is a work in progress, an ethos still condensing //
-// it shouldn't constrain implementations (probably) //
-// but it should be ruthless about constraining style and architecture while
-// remaining pragmatic about the structures that make future variation easy.
-// this metaguidance may also change and evolve //
-// after pushing extreme one-atom-per-file and then deliberately re-tuning the density,
-// we record the wiser balance.
-
-The Radical Zen of Python
 =========================
+
+
+// from prior llm -> use if helpful but deprecate severely in favor of
+// blossoming from a kernel -> deserted island programming
+// ARE YOU CAPABLE ENOUGH ENTITY TO HACK YOUR WAY OFF ISLAND?
+// bad water, severe heat, other whatevers you get the idea
+// assume reader is competent in python -> do not dilute or explain down to level of layentity
+// and one thing should be to restrict lines to <90 or so, preferably 60-70
+
 
 One atom, one file.
 One job, one function (when that job forms a natural, independently meaningful unit).
@@ -34,10 +35,11 @@ If you cannot, split it.
 
 Cognitive burden is the enemy; simplicity is the weapon.
 
+// yes keep this //
 `: ` for what goes in.
 `> ` for what comes out.
 `! ` for what must not happen.
-Say the contract; skip the sermon.
+Say the contract; skip the sermon. - ??? 
 
 Raise clear, specific exceptions for caller errors (ValueError is conventional for bad inputs); put a short description of the sin in the message. In tests, use self.rais(Exc) (or with self.rais(Exc) as ctx + isin for message checks) uniformly for any exception type. Avoid special helpers that hard-code one error kind.
 NotImplemented is honest refusal, not shame.
@@ -93,3 +95,19 @@ Name both. Tune deliberately. Evolve the ethos as you learn what density actuall
 
 This document is itself an atom (or small coherent set of principles).
 When it no longer reads top to bottom or no longer helps you ship correct, understandable, easily varied code, rewrite it.
+
+
+
+-> // and then simplify all of this in a form more amenable to you not me
+(ie) don't maintain MY style if the purpose is requisite detail for llm-style or workflow
+yeah?
+
+-> in fact in spirit of radical programming i welcome the inclusion
+in this file of methods otherwise ridiculous but for some reason
+highly amenable to ..... whatever downhill trajectories lie beyond my
+simple primate senses/faculties/knowledges etc...
+
+DESERTED ISLAND!!! serious shit -> 
+professionalism so severe it frightens layentities
+PATTON FFS!
+
