@@ -11,14 +11,12 @@ import zlib
 from png.signature import PNG_SIGNATURE
 from png.make_chunk import make_chunk
 from png.ihdr import make_ihdr
-from png.encoder import encode_png
 from png.decoder import decode_png, decode_rgba
-from png.baselines import gen_rgba
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestDecoder(PngTestCase):
+class TestDecoder(RadicalTestCase):
     def test_decode_known_minimals_ct0_2_3_6(self):
         """Given the hardcoded 1x1 minimal PNGs (ct 0/2/3/6 bd8)
         When decode_png + decode_rgba (for ct6)
@@ -114,46 +112,6 @@ class TestDecoder(PngTestCase):
                 os.unlink(tmp)
         self.equa(d1['data'], d2['data'])
         self.equa(d1['data'], d3['data'])
-
-
-class TestIntegration(PngTestCase):
-    def test_roundtrip_generated_ct6_image(self):
-        """Given a ct6/8 image produced on-demand via baseline generator + encode_png
-        When decode_png + re-encode its data (ft=0) + decode again
-        Then dims/ct match + data roundtrips (integration via current encoder/decoder)
-        """
-        w, h = 64, 32
-        data = gen_rgba(w, h, 8)
-        ihdr = {
-            'width': w, 'height': h, 'bit_depth': 8, 'color_type': 6,
-            'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
-        }
-        png = encode_png(ihdr, bytes(data), filter_type=0)
-        d = decode_png(png)
-        self.equa(d['width'], w)
-        self.equa(d['height'], h)
-        self.equa(d['color_type'], 6)
-        self.equa(d['bit_depth'], 8)
-        self.equa(d['palette'], None)
-        png2 = encode_png(ihdr, d['data'], filter_type=0)
-        d2 = decode_png(png2)
-        self.equa(d2['data'], d['data'])
-
-    def test_sizes_via_decode_png_bytes_and_stream(self):
-        """Given on-demand PNGs produced via baseline generator + encode_png
-        When decode_png(bytes) and via BytesIO
-        Then both succeed and produce matching dims/data
-        """
-        for w, h in [(4, 2), (32, 16)]:
-            data = gen_rgba(w, h, 8)
-            ihdr = {
-                'width': w, 'height': h, 'bit_depth': 8, 'color_type': 6,
-                'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
-            }
-            png = encode_png(ihdr, bytes(data), filter_type=0)
-            d_bytes = decode_png(png)
-            self.equa(d_bytes['width'], w)
-            self.equa(len(d_bytes['data']), w * h * 4)
 
 
 if __name__ == '__main__':

@@ -7,11 +7,11 @@ Pure stdlib only.
 import sys
 
 from png.ihdr import parse_ihdr, make_ihdr
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestIhdr(PngTestCase):
+class TestIhdr(RadicalTestCase):
     def test_ihdr_make_parse_roundtrip_valid(self):
         """Given valid ihdr dicts for several ct/bd (incl defaults)
         When make_ihdr then parse_ihdr

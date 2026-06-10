@@ -7,11 +7,11 @@ Pure stdlib only.
 import sys
 
 from png.plte import parse_plte, make_plte
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestPLTE(PngTestCase):
+class TestPLTE(RadicalTestCase):
     def test_plte_make_parse_roundtrip_and_errors(self):
         """Given palette lists (good + bad)
         When make_plte / parse_plte

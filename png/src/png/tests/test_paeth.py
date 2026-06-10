@@ -7,11 +7,11 @@ Pure stdlib only.
 import sys
 
 from png.paeth import paeth_predictor
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestPaeth(PngTestCase):
+class TestPaeth(RadicalTestCase):
     def test_paeth_known_and_edges(self):
         """Given the paeth predictor (a+b-c choose closest)
         When calling with the demo cases + 0/255 edges

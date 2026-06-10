@@ -7,11 +7,11 @@ Pure stdlib only.
 import sys
 
 from png.bpp import get_bpp
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestBpp(PngTestCase):
+class TestBpp(RadicalTestCase):
     def test_bpp_matrix_and_edges(self):
         """Given the ct/bd matrix from spec + ihdr
         When calling get_bpp for valid + invalid

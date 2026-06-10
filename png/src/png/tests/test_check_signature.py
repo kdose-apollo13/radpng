@@ -9,11 +9,11 @@ import sys
 
 from png.signature import PNG_SIGNATURE
 from png.check_signature import check_signature
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestCheckSignature(PngTestCase):
+class TestCheckSignature(RadicalTestCase):
     def test_signature_good_bad(self):
         """Given good and bad signature bytes via BytesIO
         When check_signature

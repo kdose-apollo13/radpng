@@ -9,11 +9,11 @@ import sys
 from png.filters import apply_filter
 from png.unfilter import unfilter
 from png.pack_bits import pack_1bit
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestFilterUnfilter(PngTestCase):
+class TestFilterUnfilter(RadicalTestCase):
     def test_filter_unfilter_symmetry_ct0_various_ft(self):
         """Given 4x2 gray8 synthetic raw bytes (same as lib demos)
         When filter(..., filter_type=ft) for ft in 0..4 then unfilter the result

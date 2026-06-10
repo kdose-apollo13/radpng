@@ -6,11 +6,11 @@ One test file per png_test atom. GWT on every method.
 import sys
 
 from png.pack_bits import pack_1bit, pack_2bit, pack_4bit
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestPackBits(PngTestCase):
+class TestPackBits(RadicalTestCase):
     def test_pack_1bit_msb_first(self):
         """Given alternating 1/0 bits
         When pack_1bit

@@ -9,11 +9,11 @@ import sys
 import zlib
 
 from png.make_chunk import make_chunk
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestMakeChunk(PngTestCase):
+class TestMakeChunk(RadicalTestCase):
     def test_make_chunk_basic_and_crc(self):
         """Given typ+data
         When make_chunk

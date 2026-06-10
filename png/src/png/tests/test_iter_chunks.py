@@ -13,11 +13,11 @@ from png.make_chunk import make_chunk
 from png.ihdr import make_ihdr
 from png.check_signature import check_signature
 from png.iter_chunks import iter_chunks
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestIterChunks(PngTestCase):
+class TestIterChunks(RadicalTestCase):
     def test_iter_chunks_good_and_bad_crc_trunc(self):
         """Given minimal good png bytes + corrupted/truncated variants
         When iter_chunks (after sig)

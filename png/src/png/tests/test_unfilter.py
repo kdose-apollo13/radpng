@@ -8,11 +8,11 @@ import sys
 
 from png.filters import apply_filter
 from png.unfilter import unfilter
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestUnfilter(PngTestCase):
+class TestUnfilter(RadicalTestCase):
     def test_unfilter_known_and_errors(self):
         """Given filtered bytes (from apply_filter) + bad lengths / types
         When unfilter

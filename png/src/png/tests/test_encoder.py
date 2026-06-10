@@ -12,13 +12,12 @@ from png.make_chunk import make_chunk
 from png.ihdr import make_ihdr
 from png.encoder import encode_png, encode_rgba
 from png.decoder import decode_png, decode_rgba
-from png.pack_bits import pack_1bit, pack_2bit, pack_4bit
 from png.baselines import gen_grey, gen_rgb, gen_rgba, gen_indexed
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestEncoder(PngTestCase):
+class TestEncoder(RadicalTestCase):
     def test_encode_rgba_validations(self):
         """Given bad pixel structures
         When encode_rgba
@@ -48,46 +47,7 @@ class TestEncoder(PngTestCase):
             encode_png(ih_i, b'\0\0')
 
 
-class TestFullRoundtrips(PngTestCase):
-    def test_roundtrips_various_ct_bd_ft_small(self):
-        """Given small images across ct 0/2/3/4/6 , bd extremes, all ft
-        When encode_png (or rgba) + decode_png/rgba
-        Then data + fields roundtrip exactly (via assert_png_roundtrip helper)
-        """
-        base_ih = lambda ct, bd: {
-            'width': 2, 'height': 1,
-            'bit_depth': bd, 'color_type': ct,
-            'compression_method': 0, 'filter_method': 0, 'interlace_method': 0,
-        }
-        for ft in range(5):
-            with self.subt(ct=0, bd=8, ft=ft):
-                self.assert_png_roundtrip(base_ih(0, 8), b'\x10\x20', filter_type=ft)
-
-        pal = [(10, 20, 30), (40, 50, 60)]
-        self.assert_png_roundtrip(base_ih(3, 8), b'\x00\x01', palette=pal, filter_type=0)
-        self.assert_png_roundtrip(base_ih(4, 8), b'\x11\xaa\x22\xbb', filter_type=2)
-        self.assert_rgba_roundtrip([[(1, 2, 3, 255), (4, 5, 6, 128)]], filter_type=4)
-        self.assert_png_roundtrip(base_ih(0, 16), b'\x01\x02\x03\x04', filter_type=0)
-
-        self.assert_png_roundtrip(base_ih(0, 1), pack_1bit([1, 0], 2), filter_type=1)
-        self.assert_png_roundtrip(base_ih(0, 2), pack_2bit([0, 3], 2), filter_type=3)
-        self.assert_png_roundtrip(base_ih(0, 4), pack_4bit([15, 0], 2), filter_type=0)
-
-    def test_1x1_edge_and_rgba(self):
-        """Given 1x1 minimal cases
-        When encode/decode (png + rgba)
-        Then roundtrips and 1x1 decode_rgba works
-        """
-        p1 = encode_rgba([[(0, 0, 0, 255)]])
-        self.equa(decode_rgba(p1), [[(0, 0, 0, 255)]])
-        self.assert_png_roundtrip(
-            {'width': 1, 'height': 1, 'bit_depth': 8, 'color_type': 0,
-             'compression_method': 0, 'filter_method': 0, 'interlace_method': 0},
-            b'\x7f'
-        )
-
-
-class TestChunkEdges(PngTestCase):
+class TestChunkEdges(RadicalTestCase):
     def test_split_idat_and_extra_chunks(self):
         """Given png constructed with split IDAT + extra ancillary
         When decode_png

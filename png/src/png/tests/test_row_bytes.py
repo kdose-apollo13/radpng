@@ -7,11 +7,11 @@ Pure stdlib only.
 import sys
 
 from png.row_bytes import get_row_bytes
-from png.tests.png_test_case import PngTestCase
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
-class TestRowBytes(PngTestCase):
+class TestRowBytes(RadicalTestCase):
     def test_row_bytes_matrix_and_edges(self):
         """Given the ct/bd matrix from spec + ihdr
         When calling get_row_bytes for valid + invalid

@@ -4,6 +4,13 @@
 """
 import unittest
 
+# Radical hook: make `python -m unittest -v` (and plain discovery from the tests dir)
+# emit the speclike GWT output. Because every test module imports RadicalTestCase
+# during loading, this swap happens before TestProgram instantiates its runner.
+import unittest as _unittest
+from rlab.test_runner import RadicalTextTestRunner as _RadicalTextTestRunner
+_unittest.TextTestRunner = _RadicalTextTestRunner
+
 
 class RadicalTestCase(unittest.TestCase):
     """

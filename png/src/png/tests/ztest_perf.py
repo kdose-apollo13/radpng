@@ -12,10 +12,17 @@ from png.encoder import encode_png
 from png.decoder import decode_png
 from png.filters import apply_filter
 from png.unfilter import unfilter
+
+
+
+# import png.baselines as base
+# base.grey, base.greyalpha etc...
 from png.baselines import (
     gen_grey, gen_greya, gen_rgb, gen_rgba, gen_indexed,
 )
-from png.tests.png_test_case import PngTestCase
+
+
+from rlab.test_case import RadicalTestCase
 from rlab.run_suite import run_module_tests
 
 
@@ -37,7 +44,7 @@ GENERATORS = {
 }
 
 
-class TestPerfMatrix(PngTestCase):
+class TestPerfMatrix(RadicalTestCase):
     def test_encode_decode_sizes_ct0_and_ct6(self):
         """Given baseline generators for ct0/6 bd8
         When encode_png + decode_png on modest growing sizes
@@ -85,7 +92,7 @@ class TestPerfMatrix(PngTestCase):
         When encode_png for every combination (small sizes only)
         Then all 300 combos succeed + roundtrip data for a sample
         """
-        sizes = [(2, 2), (10, 10), (31, 31)]
+        sizes = [(2, 2), (10, 10), (31, 31), (40, 40)]
         tests_run = 0
         for (w, h) in sizes:
             for ct, depths in BIT_DEPTH_FOR_COLOR_TYPE.items():
