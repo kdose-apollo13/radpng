@@ -244,10 +244,21 @@ class PNGViewer:
         self.cmd_bar.set_command_handler(self._handle_plain_command)
         self.cmd_bar.set_yield_focus_callback(self._focus_canvas)
 
-        # Wire the `:` detection (plain tkinter bind).
-        # We bind on the root so it works from anywhere, but we only act
-        # when the canvas currently has the interesting focus.
+        # --- focus model: only two focusable items (canvas + cmd bar) ---
+        # Startup: cmd bar is focused by default (as requested).
+        # Tab cycles between them.
+        # `:` (from canvas or general non-cmd focus) jumps to cmd bar.
+        self.view_canvas.canvas.bind("<Tab>", lambda e: (self._focus_cmd_bar(), "break"))
+        self.cmd_bar.entry.bind("<Tab>", lambda e: (self._focus_canvas(), "break"))
+        self.cmd_bar.entry.bind("<Shift-Tab>", lambda e: (self._focus_canvas(), "break"))
+
+        # Global-ish `:` detection. Plain Tk bind is the event system here.
+        # If focus is not already the cmd entry, `:` focuses/activates the bar
+        # and consumes the key (so no `:` is typed).
         self.root.bind("<Key>", self._on_global_key, add=True)
+
+        # Initial focus per spec: cmd bar at startup.
+        self.root.after(30, self._focus_cmd_bar)
 
         # Helpful initial hint on the canvas (will be replaced on first load).
         # The ViewCanvas already has a default hint; we can leave it or let it
@@ -268,10 +279,17 @@ class PNGViewer:
     def _on_global_key(self, event):
         if event.char != ":":
             return
-        # Only switch if the canvas currently "has the view"
-        if self.view_canvas.has_focus():
+        # `:` is the universal "enter command mode" key.
+        # It focuses/activates the cmd bar (if not already there) and
+        # is *always* consumed so it never becomes part of a command.
+        try:
+            current = self.root.focus_get()
+        except Exception:
+            current = None
+
+        if current is not self.cmd_bar.entry:
             self._focus_cmd_bar()
-            return "break"   # consume the ':' so it never appears in the entry
+        return "break"
 
     # ---------------- high-level command dispatch (plain text) ----------------
 
