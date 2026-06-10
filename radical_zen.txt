@@ -17,92 +17,68 @@
 // and one thing should be to restrict lines to <90 or so, preferably 60-70
 
 
-One atom, one file.
-One job, one function (when that job forms a natural, independently meaningful unit).
-Name the exports at the top; say no more than needed.
+CORE SHAPE
+- One atom, one file. One job per export when that job is independently meaningful.
+- Name exports at the top (`__all__` or a one-line manifest comment).
+- Atoms before monoliths. Composition before inheritance.
+- Orchestrate at the edges; keep the core dumb.
+- Explicit beats clever. Plain loops beat magic.
+- Bytes beat objects; dicts beat classes — unless the GUI demands otherwise.
+- Read each file top to bottom. If you cannot, split it.
+  (If splitting hurts semantic coherence or equal-signature swap, name the cost and stop.)
 
-Atoms before monoliths.
-Composition before inheritance.
-Orchestrate at the edges; keep the core dumb.
+CONTRACTS
+- `: ` for inputs. `> ` for outputs. `! ` for what must not happen.
+- Say the contract in the docstring; skip the sermon.
+- Raise clear, specific exceptions for caller errors (ValueError for bad inputs).
+  Put a short description of the sin in the message.
+- In tests: `self.rais(Exc)` uniformly; `with self.rais(Exc) as ctx` + `self.isin` for messages.
+- NotImplemented is honest refusal, not shame. Admitted tradeoffs are kept tradeoffs.
 
-Explicit beats clever.
-Plain loops beat magic.
-Bytes beat objects; dicts beat classes—unless the GUI demands otherwise.
+STDLIB & DEMOS
+- Pure stdlib only. No deps, no drama.
+- Every module is a demo: `if __name__ == '__main__'` proves the atom.
+- Thin library, thick tests. Test-only helpers stay in tests.
+- Pack what callers must pack; do not smuggle convenience into the surface.
 
-Read it top to bottom.
-If you cannot, split it.
-(If splitting increases the burden of understanding a semantic facility or makes equal-signature replacement harder, name that cost and stop.)
+TESTS
+- One test file per major atom or semantic facility.
+- Given, When, Then — every scenario speaks plain English.
+- Short aliases in tests; long names in libraries.
+- Symmetry proves correctness: encode/decode, filter/unfilter. Roundtrip is the oracle.
 
-Cognitive burden is the enemy; simplicity is the weapon.
+POWER LAW OF MODULE SIZES
+- Most files are small focused atoms (leaves).
+- A modest number of unified semantic facilities are larger — they group what is
+  understood, varied, or demoed together (row geometry, filter transform, PNG pipeline,
+  viewer GUI cluster, etc.).
+- Bias small when a clean single job exists.
+- Design for the power law that serves: semantic coherence, low import explosion,
+  easy demo at a useful abstraction, swappability during optimization.
+- When a rule feels ridiculous, try the split (or consolidation) anyway. Observe density
+  effects on correctness, comprehension, and variation. Name over/under-fragmentation. Tune.
 
-// yes keep this //
-`: ` for what goes in.
-`> ` for what comes out.
-`! ` for what must not happen.
-Say the contract; skip the sermon. - ??? 
+GUI CLUSTER (viewer lesson — tkinter is the justified class exception)
+- Split ruthlessly: widgets (canvas, cmd bar), focus state machine, command parse,
+  window geometry, pure image rows. Orchestrator wires; atoms do not know verbs.
+- Tk focus traversal is the enemy. Set `takefocus=0` on chrome (frames, scrollbars,
+  labels). Only intentional targets take focus. Drive Tab/Esc/: with an explicit state
+  machine atom — never rely on default widget tab order.
+- Three modes when interaction matters: content (img), command (cmd), general (window).
+  Tab cycles content <-> command only. Esc -> general. `:` from content or general -> cmd.
+- Commands are plain text after `:` (no leading colon in the string). Parse in a pure atom;
+  apply window verbs in another; keep PhotoImage glue in the orchestrator.
+- GUI atoms demo alone; pure atoms get unit tests. Beautiful tests, boring code.
 
-Raise clear, specific exceptions for caller errors (ValueError is conventional for bad inputs); put a short description of the sin in the message. In tests, use self.rais(Exc) (or with self.rais(Exc) as ctx + isin for message checks) uniformly for any exception type. Avoid special helpers that hard-code one error kind.
-NotImplemented is honest refusal, not shame.
-Tradeoffs admitted in the docstring are tradeoffs kept.
+DISCIPLINE
+- Radical is not reckless. Decompose, march, accept the cost.
+- Some generality deferred is complexity slain.
+- Informative failures, quiet successes. When all pass: Radical!
+- Duplication in 2nd-order tests may be the honest price of isolation.
 
-Pure stdlib only.
-No deps, no drama.
-What the language already gives you is enough.
-
-Every module is a demo.
-`if __name__ == '__main__'`: run the atom (or the small coherent facility), prove it.
-The file (or tight cluster) teaches itself.
-
-Thin library, thick tests.
-Test-only helpers stay in tests.
-Pack what callers must pack; do not smuggle convenience into the surface.
-
-One test file per (major) atom or semantic facility.
-Given, When, Then—every scenario speaks plain English.
-Short aliases in tests; long names in libraries.
-
-Symmetry proves correctness.
-Encode then decode; filter then unfilter.
-Roundtrip is the oracle.
-
-Radical is not reckless.
-Radical is Patton on complexity: decompose, march, accept the cost.
-Some generality deferred is complexity slain.
-
-A healthy codebase exhibits a power-law distribution of module sizes.
-Most files are small and focused (true atoms or leaves).
-A modest number of "unified semantic facilities" are larger — they group things that are usually understood, varied, or demoed together (row geometry, the filter transform, the scaling/reporting experience, the PNG encoding pipeline, etc.).
-
-Bias strongly toward small when a clean single job exists.
-But design explicitly for the power law that serves:
-- semantic coherence (you can point to "the scaling facility" or "the PNG row transform" without opening a dozen files),
-- low combinatorial explosion (reasonable imports when using a common story),
-- easy understanding and demo at a useful abstraction level,
-- swappability for the optimization phase (equal-signature pieces or small coherent groups live close together and are convenient to replace via variants, contexts, or direct substitution while keeping high-level scenarios locked).
-
-When the rule feels ridiculous, try the split (or the consolidation) anyway.
-The observation of the resulting density and its effect on correctness, comprehension, and future variation is part of the practice.
-
-Beautiful tests, boring code.
-Informative failures, quiet successes.
-When all pass: Radical!
-
-Observe what the rules create.
-Duplication in 2nd-order tests may be the honest price of isolation.
-Over-fragmentation raises the cost of variation and makes the flock harder to navigate.
-Under-fragmentation hides seams that should be swappable.
-Name both. Tune deliberately. Evolve the ethos as you learn what density actually serves the work.
-
-This document is itself an atom (or small coherent set of principles).
-When it no longer reads top to bottom or no longer helps you ship correct, understandable, easily varied code, rewrite it.
-
-
-
--> // and then simplify all of this in a form more amenable to you not me
-(ie) don't maintain MY style if the purpose is requisite detail for llm-style or workflow
-yeah?
-
--> in fact in spirit of radical programming i welcome the inclusion
-in this file of methods otherwise ridiculous but for some reason
-highly amenable favorable downhill trajectories / equilibria
-
+META
+- This document is an atom. Rewrite it when it stops reading top-to-bottom or stops
+  helping you ship correct, understandable, easily varied code.
+- LLM/workflow note: prefer structured sections and explicit contracts over prose style
+  for its own sake. Include methods that look silly but create favorable downhill
+  trajectories (explicit focus modes, `__all__` manifests, parse-then-dispatch commands).
