@@ -1,21 +1,23 @@
-// POST-APOCALYPTIC PYTHON, no libs, no excess
-// code promotes education, of subject matter and repo
-// standalone atomic files, descriptive, demonstrative, digestible
+section: don't change this
 
+// POST-APOCALYPTIC PYTHON
+// code promotes education
+// standalone atomic files
+// manage cognitive burden
+// with patton aggressives
+// and sharp use of enigma
+// software and epistemics
 
-// think -> PATTON-style war on complexity
-// both software complexity and info/knowledge availability in general
+// DESERTED ISLAND PYTHON
+// ARE YOU CAPABLE ENOUGH ENTITY TO HACK YOUR WAY OFF ISLAND?
+// clever use of stdlib sometimes required!
+// assume reader is competent in python 
+// do not dilute or explain down to level of layentity
+// restrict lines to <90 or so, preferably 60-70 or less, but always proper
 
 =========================
 
-
-// from prior llm -> use if helpful but deprecate severely in favor of
-// blossoming from a kernel -> deserted island programming
-// ARE YOU CAPABLE ENOUGH ENTITY TO HACK YOUR WAY OFF ISLAND?
-// bad water, severe heat, other whatevers you get the idea
-// assume reader is competent in python -> do not dilute or explain down to level of layentity
-// and one thing should be to restrict lines to <90 or so, preferably 60-70
-
+section: feel free to ammend/change this based on learnings and insights
 
 CORE SHAPE
 - One atom, one file. One job per export when that job is independently meaningful.
@@ -37,7 +39,7 @@ CONTRACTS
 - NotImplemented is honest refusal, not shame. Admitted tradeoffs are kept tradeoffs.
 
 STDLIB & DEMOS
-- Pure stdlib only. No deps, no drama.
+- Pure stdlib only. No deps, no drama. -> hacker ethos, old school,
 - Every module is a demo: `if __name__ == '__main__'` proves the atom.
 - Thin library, thick tests. Test-only helpers stay in tests.
 - Pack what callers must pack; do not smuggle convenience into the surface.
@@ -83,3 +85,4 @@ META
 - LLM/workflow note: prefer structured sections and explicit contracts over prose style
   for its own sake. Include methods that look silly but create favorable downhill
   trajectories (explicit focus modes, `__all__` manifests, parse-then-dispatch commands).
+
