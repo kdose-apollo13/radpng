@@ -29,6 +29,7 @@ CORE SHAPE
 
 CONTRACTS
 - `: ` for inputs. `> ` for outputs. `! ` for what must not happen.
+- Let there be a blank line between the sections :, > and !
 - Say the contract in the docstring; skip the sermon.
 - Raise clear, specific exceptions for caller errors (ValueError for bad inputs).
   Put a short description of the sin in the message.
